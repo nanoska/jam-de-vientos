@@ -28,16 +28,46 @@ import {
   X,
 } from "lucide-react"
 import Link from "next/link"
-import { getThemes, addTheme, type Theme } from "@/lib/file-manager"
+import { getThemes, addTheme, updateTheme, deleteTheme, type Theme } from "@/lib/file-manager"
+
+// Opciones para las notas musicales (12 tonos)
+const noteOptions = [
+  { value: "C", label: "C" },
+  { value: "C#", label: "C# / Db" },
+  { value: "D", label: "D" },
+  { value: "D#", label: "D# / Eb" },
+  { value: "E", label: "E" },
+  { value: "F", label: "F" },
+  { value: "F#", label: "F# / Gb" },
+  { value: "G", label: "G" },
+  { value: "G#", label: "G# / Ab" },
+  { value: "A", label: "A" },
+  { value: "A#", label: "A# / Bb" },
+  { value: "B", label: "B" },
+]
+
+// Opciones para los tipos de escala
+const scaleOptions = [
+  { value: "Mayor", label: "Mayor" },
+  { value: "menor", label: "menor" },
+  { value: "Armónica", label: "Armónica" },
+  { value: "Melódica", label: "Melódica" },
+]
 
 interface NewSong {
   title: string
   artist: string
-  key: string
+  keyNote: string
+  keyScale: string
   tempo: string
   structure: string
   description: string
   image: File | null
+}
+
+interface EditSong extends NewSong {
+  id: string
+  audioFile: File | null
 }
 
 export default function AdminDashboard() {
@@ -45,14 +75,28 @@ export default function AdminDashboard() {
   const [selectedSong, setSelectedSong] = useState<string | null>(null)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [showNewSongForm, setShowNewSongForm] = useState(false)
+  const [showEditSongForm, setShowEditSongForm] = useState(false)
   const [newSong, setNewSong] = useState<NewSong>({
     title: "",
     artist: "",
-    key: "",
+    keyNote: "",
+    keyScale: "",
     tempo: "",
     structure: "",
     description: "",
     image: null,
+  })
+  const [editSong, setEditSong] = useState<EditSong>({
+    id: "",
+    title: "",
+    artist: "",
+    keyNote: "",
+    keyScale: "",
+    tempo: "",
+    structure: "",
+    description: "",
+    image: null,
+    audioFile: null,
   })
   const [themes, setThemes] = useState<Theme[]>([])
 
@@ -72,38 +116,127 @@ export default function AdminDashboard() {
   }
 
   const handleCreateSong = () => {
-    if (newSong.title && newSong.artist && newSong.key) {
+    if (newSong.title && newSong.artist && newSong.keyNote && newSong.keyScale) {
       let imageUrl = "/placeholder-442ix.png"
       if (newSong.image) {
         imageUrl = URL.createObjectURL(newSong.image)
       }
 
+      const key = `${newSong.keyNote} ${newSong.keyScale}`
+      const tempo = newSong.tempo ? `${newSong.tempo} BPM` : "120 BPM"
+
       const newTheme = addTheme({
         title: newSong.title,
         artist: newSong.artist,
         image: imageUrl,
-        key: newSong.key,
-        tempo: newSong.tempo || "120 BPM",
+        key: key,
+        tempo: tempo,
         structure: newSong.structure || "Intro - A - B - A - B - Outro",
         description: newSong.description || "Nuevo tema agregado al repertorio.",
         files: [],
       })
 
       setThemes(getThemes())
-      setNewSong({ title: "", artist: "", key: "", tempo: "", structure: "", description: "", image: null })
+      setNewSong({ title: "", artist: "", keyNote: "", keyScale: "", tempo: "", structure: "", description: "", image: null })
       setShowNewSongForm(false)
 
       console.log("[v0] New theme created:", newTheme)
     }
   }
 
+  const handleEditSong = (theme: Theme) => {
+    // Parse existing key to extract note and scale
+    const keyParts = theme.key.split(' ')
+    const keyNote = keyParts[0] || ''
+    const keyScale = keyParts.slice(1).join(' ') || ''
+    
+    // Parse tempo to extract numeric value (remove BPM)
+    const tempoValue = theme.tempo.replace(' BPM', '').replace('BPM', '') || ''
+    
+    setEditSong({
+      id: theme.id,
+      title: theme.title,
+      artist: theme.artist,
+      keyNote: keyNote,
+      keyScale: keyScale,
+      tempo: tempoValue,
+      structure: theme.structure,
+      description: theme.description,
+      image: null,
+      audioFile: null,
+    })
+    setShowEditSongForm(true)
+  }
+
+  const handleUpdateSong = () => {
+    if (editSong.title && editSong.artist && editSong.keyNote && editSong.keyScale) {
+      const key = `${editSong.keyNote} ${editSong.keyScale}`
+      const tempo = editSong.tempo ? `${editSong.tempo} BPM` : "120 BPM"
+      
+      const updates: Partial<Omit<Theme, 'id' | 'files'>> = {
+        title: editSong.title,
+        artist: editSong.artist,
+        key: key,
+        tempo: tempo,
+        structure: editSong.structure || "Intro - A - B - A - B - Outro",
+        description: editSong.description || "Tema actualizado.",
+      }
+
+      if (editSong.image) {
+        updates.image = URL.createObjectURL(editSong.image)
+      }
+
+      if (editSong.audioFile) {
+        updates.audioUrl = URL.createObjectURL(editSong.audioFile)
+      }
+
+      const updatedTheme = updateTheme(editSong.id, updates)
+      if (updatedTheme) {
+        setThemes(getThemes())
+        setEditSong({
+          id: "",
+          title: "",
+          artist: "",
+          keyNote: "",
+          keyScale: "",
+          tempo: "",
+          structure: "",
+          description: "",
+          image: null,
+          audioFile: null,
+        })
+        setShowEditSongForm(false)
+        console.log("[v0] Theme updated:", updatedTheme)
+      }
+    }
+  }
+
   const handleDeleteSong = (themeId: string) => {
-    // In a real implementation, you would delete from the file manager
-    console.log("[v0] Theme deleted:", themeId)
+    if (confirm("¿Estás seguro de que quieres eliminar este tema?")) {
+      const deleted = deleteTheme(themeId)
+      if (deleted) {
+        setThemes(getThemes())
+        console.log("[v0] Theme deleted:", themeId)
+      }
+    }
+  }
+
+  const handleEditImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      setEditSong((prev) => ({ ...prev, image: file }))
+    }
+  }
+
+  const handleEditAudioUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      setEditSong((prev) => ({ ...prev, audioFile: file }))
+    }
   }
 
   const totalSongs = themes.length
-  const songsWithAudio = themes.filter((t) => t.files.some((f) => f.type === "audio")).length
+  const songsWithAudio = themes.filter((t) => t.audioUrl).length
   const totalSheets = themes.reduce((acc, t) => acc + t.files.filter((f) => f.type === "pdf").length, 0)
 
   return (
@@ -240,47 +373,60 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
-                    <Label htmlFor="key">Tonalidad</Label>
+                    <Label htmlFor="key-note">Nota</Label>
                     <Select
-                      value={newSong.key}
-                      onValueChange={(value) => setNewSong((prev) => ({ ...prev, key: value }))}
+                      value={newSong.keyNote}
+                      onValueChange={(value) => setNewSong((prev) => ({ ...prev, keyNote: value }))}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Selecciona la tonalidad" />
+                        <SelectValue placeholder="Selecciona la nota" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="C Major">C Mayor</SelectItem>
-                        <SelectItem value="Db Major">Db Mayor</SelectItem>
-                        <SelectItem value="D Major">D Mayor</SelectItem>
-                        <SelectItem value="Eb Major">Eb Mayor</SelectItem>
-                        <SelectItem value="E Major">E Mayor</SelectItem>
-                        <SelectItem value="F Major">F Mayor</SelectItem>
-                        <SelectItem value="F# Major">F# Mayor</SelectItem>
-                        <SelectItem value="G Major">G Mayor</SelectItem>
-                        <SelectItem value="Ab Major">Ab Mayor</SelectItem>
-                        <SelectItem value="A Major">A Mayor</SelectItem>
-                        <SelectItem value="Bb Major">Bb Mayor</SelectItem>
-                        <SelectItem value="B Major">B Mayor</SelectItem>
-                        <SelectItem value="A Minor">A menor</SelectItem>
-                        <SelectItem value="B Minor">B menor</SelectItem>
-                        <SelectItem value="C Minor">C menor</SelectItem>
-                        <SelectItem value="D Minor">D menor</SelectItem>
-                        <SelectItem value="E Minor">E menor</SelectItem>
-                        <SelectItem value="F Minor">F menor</SelectItem>
-                        <SelectItem value="G Minor">G menor</SelectItem>
+                        {noteOptions.map((note) => (
+                          <SelectItem key={note.value} value={note.value}>
+                            {note.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="key-scale">Tipo de Escala</Label>
+                    <Select
+                      value={newSong.keyScale}
+                      onValueChange={(value) => setNewSong((prev) => ({ ...prev, keyScale: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecciona la escala" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {scaleOptions.map((scale) => (
+                          <SelectItem key={scale.value} value={scale.value}>
+                            {scale.label}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
                   <div>
                     <Label htmlFor="tempo">Tempo</Label>
-                    <Input
-                      id="tempo"
-                      value={newSong.tempo}
-                      onChange={(e) => setNewSong((prev) => ({ ...prev, tempo: e.target.value }))}
-                      placeholder="Ej: 120 BPM"
-                    />
+                    <div className="relative">
+                      <Input
+                        id="tempo"
+                        type="number"
+                        min="1"
+                        max="300"
+                        value={newSong.tempo}
+                        onChange={(e) => setNewSong((prev) => ({ ...prev, tempo: e.target.value }))}
+                        placeholder="120"
+                        className="pr-12"
+                      />
+                      <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                        <span className="text-sm text-gray-500">BPM</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -319,10 +465,156 @@ export default function AdminDashboard() {
                   <Button
                     onClick={handleCreateSong}
                     className="bg-orange-500 hover:bg-orange-600"
-                    disabled={!newSong.title || !newSong.artist || !newSong.key}
+                    disabled={!newSong.title || !newSong.artist || !newSong.keyNote || !newSong.keyScale}
                   >
                     <Save className="w-4 h-4 mr-2" />
                     Crear Tema
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {showEditSongForm && (
+            <Card className="mb-6">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle>Editar Tema</CardTitle>
+                  <Button variant="ghost" size="sm" onClick={() => setShowEditSongForm(false)}>
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+                <CardDescription>
+                  Actualiza la información del tema. Puedes cambiar la imagen y agregar/cambiar el audio.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="edit-title">Título del Tema</Label>
+                    <Input
+                      id="edit-title"
+                      value={editSong.title}
+                      onChange={(e) => setEditSong((prev) => ({ ...prev, title: e.target.value }))}
+                      placeholder="Ej: Police Woman"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="edit-artist">Artista</Label>
+                    <Input
+                      id="edit-artist"
+                      value={editSong.artist}
+                      onChange={(e) => setEditSong((prev) => ({ ...prev, artist: e.target.value }))}
+                      placeholder="Ej: The Skatalites"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <Label htmlFor="edit-key-note">Nota</Label>
+                    <Select
+                      value={editSong.keyNote}
+                      onValueChange={(value) => setEditSong((prev) => ({ ...prev, keyNote: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecciona la nota" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {noteOptions.map((note) => (
+                          <SelectItem key={note.value} value={note.value}>
+                            {note.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="edit-key-scale">Tipo de Escala</Label>
+                    <Select
+                      value={editSong.keyScale}
+                      onValueChange={(value) => setEditSong((prev) => ({ ...prev, keyScale: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecciona la escala" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {scaleOptions.map((scale) => (
+                          <SelectItem key={scale.value} value={scale.value}>
+                            {scale.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="edit-tempo">Tempo</Label>
+                    <div className="relative">
+                      <Input
+                        id="edit-tempo"
+                        type="number"
+                        min="1"
+                        max="300"
+                        value={editSong.tempo}
+                        onChange={(e) => setEditSong((prev) => ({ ...prev, tempo: e.target.value }))}
+                        placeholder="120"
+                        className="pr-12"
+                      />
+                      <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                        <span className="text-sm text-gray-500">BPM</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="edit-structure">Estructura</Label>
+                  <Input
+                    id="edit-structure"
+                    value={editSong.structure}
+                    onChange={(e) => setEditSong((prev) => ({ ...prev, structure: e.target.value }))}
+                    placeholder="Ej: Intro - A - B - A - B - Solo - Outro"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="edit-description">Descripción</Label>
+                  <Input
+                    id="edit-description"
+                    value={editSong.description}
+                    onChange={(e) => setEditSong((prev) => ({ ...prev, description: e.target.value }))}
+                    placeholder="Describe el estilo, características y contexto del tema"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="edit-image">Nueva Imagen (opcional)</Label>
+                    <div className="flex items-center space-x-2">
+                      <Input id="edit-image" type="file" accept="image/*" onChange={handleEditImageUpload} className="flex-1" />
+                      <div className="text-xs text-gray-500 whitespace-nowrap">400x300px</div>
+                    </div>
+                  </div>
+                  <div>
+                    <Label htmlFor="edit-audio">Nuevo Audio (opcional)</Label>
+                    <div className="flex items-center space-x-2">
+                      <Input id="edit-audio" type="file" accept="audio/*" onChange={handleEditAudioUpload} className="flex-1" />
+                      <div className="text-xs text-gray-500 whitespace-nowrap">MP3, WAV</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-end space-x-2">
+                  <Button variant="outline" onClick={() => setShowEditSongForm(false)}>
+                    Cancelar
+                  </Button>
+                  <Button
+                    onClick={handleUpdateSong}
+                    className="bg-orange-500 hover:bg-orange-600"
+                    disabled={!editSong.title || !editSong.artist || !editSong.keyNote || !editSong.keyScale}
+                  >
+                    <Save className="w-4 h-4 mr-2" />
+                    Actualizar Tema
                   </Button>
                 </div>
               </CardContent>
@@ -369,10 +661,10 @@ export default function AdminDashboard() {
                             <div className="flex items-center space-x-2">
                               <Volume2 className="w-4 h-4 text-green-500" />
                               <Badge
-                                variant={theme.files.some((f) => f.type === "audio") ? "default" : "secondary"}
+                                variant={theme.audioUrl ? "default" : "secondary"}
                                 className="text-xs"
                               >
-                                {theme.files.some((f) => f.type === "audio") ? "Audio ✓" : "Sin Audio"}
+                                {theme.audioUrl ? "Audio ✓" : "Sin Audio"}
                               </Badge>
                             </div>
                             <div className="flex items-center space-x-2">
@@ -397,7 +689,7 @@ export default function AdminDashboard() {
                               Subir
                             </Button>
                           </Link>
-                          <Button size="sm" variant="outline">
+                          <Button size="sm" variant="outline" onClick={() => handleEditSong(theme)}>
                             <Edit className="w-4 h-4" />
                           </Button>
                           <Button

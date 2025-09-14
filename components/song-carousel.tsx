@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -26,14 +26,18 @@ interface SongCarouselProps {
   selectedSong: Song
   onSongSelect: (song: Song) => void
   isDarkMode: boolean
+  isPlaying: boolean
+  onTogglePlayPause: () => void
+  onRestart: () => void
 }
 
-export function SongCarousel({ songs, selectedSong, onSongSelect, isDarkMode }: SongCarouselProps) {
+export function SongCarousel({ songs, selectedSong, onSongSelect, isDarkMode, isPlaying, onTogglePlayPause, onRestart }: SongCarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isMobile, setIsMobile] = useState(false)
-  const [audio, setAudio] = useState<HTMLAudioElement | null>(null)
-  const [isPlaying, setIsPlaying] = useState(true)
-  const [currentAudioUrl, setCurrentAudioUrl] = useState<string | null>(null)
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const [isDragging, setIsDragging] = useState(false)
+  const [startX, setStartX] = useState(0)
+  const [scrollLeft, setScrollLeft] = useState(0)
 
   useEffect(() => {
     const selectedIndex = songs.findIndex((song) => song.id === selectedSong.id)
@@ -53,12 +57,47 @@ export function SongCarousel({ songs, selectedSong, onSongSelect, isDarkMode }: 
   }, [])
 
   const handleSongClick = (song: Song, index: number) => {
-    setCurrentIndex(index)
-    onSongSelect(song)
-    if (audio) {
-      audio.pause()
-      setIsPlaying(false)
+    if (!isDragging) {
+      setCurrentIndex(index)
+      onSongSelect(song)
     }
+  }
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (!scrollContainerRef.current) return
+    setIsDragging(true)
+    setStartX(e.pageX - scrollContainerRef.current.offsetLeft)
+    setScrollLeft(scrollContainerRef.current.scrollLeft)
+  }
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging || !scrollContainerRef.current) return
+    e.preventDefault()
+    const x = e.pageX - scrollContainerRef.current.offsetLeft
+    const walk = (x - startX) * 2
+    scrollContainerRef.current.scrollLeft = scrollLeft - walk
+  }
+
+  const handleMouseUp = () => {
+    setIsDragging(false)
+  }
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (!scrollContainerRef.current) return
+    setIsDragging(true)
+    setStartX(e.touches[0].pageX - scrollContainerRef.current.offsetLeft)
+    setScrollLeft(scrollContainerRef.current.scrollLeft)
+  }
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isDragging || !scrollContainerRef.current) return
+    const x = e.touches[0].pageX - scrollContainerRef.current.offsetLeft
+    const walk = (x - startX) * 2
+    scrollContainerRef.current.scrollLeft = scrollLeft - walk
+  }
+
+  const handleTouchEnd = () => {
+    setIsDragging(false)
   }
 
   const getItemStyle = (index: number) => {
@@ -99,92 +138,26 @@ export function SongCarousel({ songs, selectedSong, onSongSelect, isDarkMode }: 
     }
   }
 
-  const handlePlay = async (song: Song, e: React.MouseEvent) => {
+  const handlePlay = (e: React.MouseEvent) => {
     e.stopPropagation()
-
-    try {
-      const audioFiles = getFilesByTheme(song.id.toString(), "audio")
-
-      if (audioFiles.length === 0) {
-        console.log("[v0] No audio files found for theme:", song.title)
-        return
-      }
-
-      const audioFile = audioFiles[0]
-
-      if (audio && currentAudioUrl === audioFile.url && !audio.paused) {
-        audio.pause()
-        setIsPlaying(false)
-        return
-      }
-
-      if (audio) {
-        audio.pause()
-      }
-
-      console.log("[v0] Playing audio:", audioFile.url)
-      const newAudio = new Audio(audioFile.url)
-
-      newAudio.addEventListener("loadstart", () => {
-        console.log("[v0] Audio loading started")
-      })
-
-      newAudio.addEventListener("canplay", () => {
-        console.log("[v0] Audio can play")
-      })
-
-      newAudio.addEventListener("error", (e) => {
-        console.log("[v0] Audio error:", e)
-        setIsPlaying(false)
-      })
-
-      newAudio.addEventListener("ended", () => {
-        console.log("[v0] Audio ended")
-        setIsPlaying(false)
-      })
-
-      await newAudio.play()
-      setAudio(newAudio)
-      setCurrentAudioUrl(audioFile.url)
-      setIsPlaying(true)
-    } catch (error) {
-      console.log("[v0] Error playing audio:", error)
-      setIsPlaying(false)
-    }
+    onTogglePlayPause()
   }
 
   const handleBack = (e: React.MouseEvent) => {
     e.stopPropagation()
-    if (audio) {
-      audio.currentTime = 0
-      console.log("[v0] Audio rewound to beginning")
-    }
+    onRestart()
   }
 
-  const handlePause = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    if (audio) {
-      audio.pause()
-      setIsPlaying(false)
-      console.log("[v0] Audio paused")
-    }
-  }
 
-  useEffect(() => {
-    return () => {
-      if (audio) {
-        audio.pause()
-      }
-    }
-  }, [audio])
 
   return (
-    <div className="relative h-64 sm:h-80 md:h-96 flex items-center justify-center overflow-hidden px-4">
-      <div className="relative w-full h-full flex items-center justify-center" style={{ perspective: "1000px" }}>
+    <div className="relative h-64 sm:h-80 md:h-96 overflow-hidden">
+      {/* Desktop 3D Carousel */}
+      <div className="hidden md:flex relative w-full h-full items-center justify-center px-4" style={{ perspective: "1000px" }}>
         {songs.map((song, index) => {
           const style = getItemStyle(index)
           const isCenter = index === currentIndex
-          const hasAudio = getFilesByTheme(song.id.toString(), "audio").length > 0
+          const hasAudio = !!song.audioUrl
 
           return (
             <div
@@ -224,7 +197,7 @@ export function SongCarousel({ songs, selectedSong, onSongSelect, isDarkMode }: 
                       size="sm"
                       variant="secondary"
                       className="w-8 h-8 p-0 bg-black/50 hover:bg-black/70 border-0"
-                      onClick={isPlaying ? handlePause : (e) => handlePlay(song, e)}
+                      onClick={handlePlay}
                     >
                       {isPlaying ? (
                         <PauseIcon className="w-3 h-3 text-white" />
@@ -245,7 +218,162 @@ export function SongCarousel({ songs, selectedSong, onSongSelect, isDarkMode }: 
         })}
       </div>
 
-      <div className="absolute bottom-2 sm:bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2">
+      {/* Mobile Horizontal Scroll */}
+      <div 
+        ref={scrollContainerRef}
+        className="md:hidden flex items-center h-full overflow-x-auto scrollbar-hide px-4 gap-4 cursor-grab active:cursor-grabbing"
+        style={{ scrollSnapType: "x mandatory" }}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
+        {songs.map((song, index) => {
+          const isSelected = song.id === selectedSong.id
+          const hasAudio = !!song.audioUrl
+
+          return (
+            <div
+              key={song.id}
+              className={cn(
+                "flex-shrink-0 relative cursor-pointer transition-all duration-300",
+                "w-48 h-48 rounded-lg overflow-hidden",
+                isSelected ? "ring-4 ring-orange-500 scale-105" : "hover:scale-102"
+              )}
+              style={{ scrollSnapAlign: "center" }}
+              onClick={() => handleSongClick(song, index)}
+            >
+              <Image
+                src={song.image}
+                alt={song.title}
+                fill
+                className="object-cover"
+                sizes="(max-width: 768px) 192px, 256px"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+
+              {isSelected && hasAudio && (
+                <div className="absolute top-2 right-2 flex gap-1">
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    className="w-8 h-8 p-0 bg-black/50 hover:bg-black/70 border-0"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onRestart()
+                    }}
+                  >
+                    <SkipBackIcon className="w-3 h-3 text-white" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    className="w-8 h-8 p-0 bg-black/50 hover:bg-black/70 border-0"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onTogglePlayPause()
+                    }}
+                  >
+                    {isPlaying ? (
+                      <PauseIcon className="w-3 h-3 text-white" />
+                    ) : (
+                      <PlayIcon className="w-3 h-3 text-white" />
+                    )}
+                  </Button>
+                </div>
+              )}
+
+              <div className="absolute bottom-2 left-2 right-2 text-white">
+                <h3 className="font-bold text-sm mb-1 text-balance">{song.title}</h3>
+                <p className="text-xs opacity-90 text-balance">{song.artist}</p>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      {/* Mobile Horizontal Scroll */}
+      <div 
+        ref={scrollContainerRef}
+        className="md:hidden flex items-center h-full overflow-x-auto scrollbar-hide px-4 gap-4 cursor-grab active:cursor-grabbing"
+        style={{ scrollSnapType: "x mandatory" }}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
+        {songs.map((song, index) => {
+          const isSelected = song.id === selectedSong.id
+          const hasAudio = !!song.audioUrl
+
+          return (
+            <div
+              key={song.id}
+              className={cn(
+                "flex-shrink-0 relative cursor-pointer transition-all duration-300",
+                "w-48 h-48 rounded-lg overflow-hidden",
+                isSelected ? "ring-4 ring-orange-500 scale-105" : "hover:scale-102"
+              )}
+              style={{ scrollSnapAlign: "center" }}
+              onClick={() => handleSongClick(song, index)}
+            >
+              <Image
+                src={song.image}
+                alt={song.title}
+                fill
+                className="object-cover"
+                sizes="(max-width: 768px) 192px, 256px"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+
+              {isSelected && hasAudio && (
+                <div className="absolute top-2 right-2 flex gap-1">
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    className="w-8 h-8 p-0 bg-black/50 hover:bg-black/70 border-0"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onRestart()
+                    }}
+                  >
+                    <SkipBackIcon className="w-3 h-3 text-white" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    className="w-8 h-8 p-0 bg-black/50 hover:bg-black/70 border-0"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onTogglePlayPause()
+                    }}
+                  >
+                    {isPlaying ? (
+                      <PauseIcon className="w-3 h-3 text-white" />
+                    ) : (
+                      <PlayIcon className="w-3 h-3 text-white" />
+                    )}
+                  </Button>
+                </div>
+              )}
+
+              <div className="absolute bottom-2 left-2 right-2 text-white">
+                <h3 className="font-bold text-sm mb-1 text-balance">{song.title}</h3>
+                <p className="text-xs opacity-90 text-balance">{song.artist}</p>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      {/* Desktop indicators only */}
+      <div className="hidden md:flex absolute bottom-2 sm:bottom-4 left-1/2 transform -translate-x-1/2 gap-2">
         {songs.map((_, index) => (
           <button
             key={index}
@@ -255,7 +383,10 @@ export function SongCarousel({ songs, selectedSong, onSongSelect, isDarkMode }: 
                 ? "bg-orange-500 scale-125"
                 : `${isDarkMode ? "bg-gray-600 hover:bg-gray-500" : "bg-gray-300 hover:bg-gray-400"}`,
             )}
-            onClick={() => handleSongClick(songs[index], index)}
+            onClick={() => {
+              setCurrentIndex(index)
+              onSongSelect(songs[index])
+            }}
           />
         ))}
       </div>

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { getFilesByTheme, type UploadedFile } from "@/lib/file-manager"
-import { PlayIcon, PauseIcon, DownloadIcon, MusicIcon, ClockIcon, KeyIcon } from "@/components/icons"
+import { PlayIcon, PauseIcon, DownloadIcon, MusicIcon, ClockIcon, KeyIcon, SkipBackIcon } from "@/components/icons"
 
 interface Song {
   id: number
@@ -23,6 +23,9 @@ interface Song {
 interface SongDetailsProps {
   song: Song
   isDarkMode: boolean
+  isPlaying: boolean
+  onTogglePlayPause: () => void
+  onRestart: () => void
 }
 
 const instrumentOptions = [
@@ -30,23 +33,18 @@ const instrumentOptions = [
   { id: "Eb", label: "Eb (Alto Sax, Barítono)", transposition: "Eb" },
   { id: "C", label: "C (Flauta, Violín, Piano)", transposition: "C" },
   { id: "Clave de Fa", label: "Clave de Fa (Trombón, Tuba, Fagot)", transposition: "Bass Clef" },
-  { id: "Bajo", label: "Bajo", transposition: "Bass" },
-  { id: "Batería", label: "Batería", transposition: "Percussion" },
 ]
 
 const partOptions = [
   { id: "Melodía", label: "Melodía Principal" },
   { id: "Armonía", label: "Armonía/Contrapunto" },
   { id: "Bajo", label: "Línea de Bajo" },
-  { id: "Batería", label: "Batería" },
 ]
 
-export function SongDetails({ song, isDarkMode }: SongDetailsProps) {
-  const [isPlaying, setIsPlaying] = useState(false)
+export function SongDetails({ song, isDarkMode, isPlaying, onTogglePlayPause, onRestart }: SongDetailsProps) {
   const [selectedInstrument, setSelectedInstrument] = useState("Bb")
   const [selectedPart, setSelectedPart] = useState("Melodía")
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([])
-  const [audio, setAudio] = useState<HTMLAudioElement | null>(null)
 
   useEffect(() => {
     const files = getFilesByTheme(song.id.toString())
@@ -54,57 +52,13 @@ export function SongDetails({ song, isDarkMode }: SongDetailsProps) {
     console.log("[v0] Loaded files for song:", song.title, files)
   }, [song.id])
 
-  const handlePlayPause = async () => {
-    try {
-      if (isPlaying && audio) {
-        audio.pause()
-        setIsPlaying(false)
-        console.log("[v0] Audio paused")
-        return
-      }
-
-      const audioFiles = uploadedFiles.filter((f) => f.type === "audio")
-
-      if (audioFiles.length === 0) {
-        console.log("[v0] No audio files available for:", song.title)
-        alert("No hay archivos de audio disponibles para este tema")
-        return
-      }
-
-      if (audio) {
-        audio.pause()
-      }
-
-      const audioUrl = audioFiles[0].url
-      console.log("[v0] Playing audio:", audioUrl)
-
-      const newAudio = new Audio(audioUrl)
-      newAudio.addEventListener("ended", () => {
-        setIsPlaying(false)
-        console.log("[v0] Audio playback ended")
-      })
-      newAudio.addEventListener("error", (e) => {
-        console.log("[v0] Audio error:", e)
-        setIsPlaying(false)
-        alert("Error al reproducir el audio")
-      })
-
-      await newAudio.play()
-      setAudio(newAudio)
-      setIsPlaying(true)
-    } catch (error) {
-      console.log("[v0] Error in handlePlayPause:", error)
-      setIsPlaying(false)
-      alert("Error al reproducir el audio")
-    }
-  }
 
   const handleDownload = () => {
     const instrument = instrumentOptions.find((i) => i.id === selectedInstrument)
     const part = partOptions.find((p) => p.id === selectedPart)
 
     const matchingFile = uploadedFiles.find(
-      (f) => f.type === "pdf" && f.instrument === selectedInstrument && f.part === selectedPart,
+      (f) => f.type === "pdf" && f.tuning === selectedInstrument && f.scoreType === selectedPart,
     )
 
     console.log("[v0] Looking for file:", { selectedInstrument, selectedPart, availableFiles: uploadedFiles })
@@ -127,18 +81,10 @@ export function SongDetails({ song, isDarkMode }: SongDetailsProps) {
   }
 
   const isDownloadAvailable = () => {
-    return uploadedFiles.some((f) => f.type === "pdf" && f.instrument === selectedInstrument && f.part === selectedPart)
+    return uploadedFiles.some((f) => f.type === "pdf" && f.tuning === selectedInstrument && f.scoreType === selectedPart)
   }
 
-  const hasAudioFiles = uploadedFiles.some((f) => f.type === "audio")
-
-  useEffect(() => {
-    return () => {
-      if (audio) {
-        audio.pause()
-      }
-    }
-  }, [audio])
+  const hasAudio = !!song.audioUrl
 
   return (
     <Card
@@ -152,25 +98,30 @@ export function SongDetails({ song, isDarkMode }: SongDetailsProps) {
             <CardTitle className="text-xl sm:text-2xl md:text-3xl font-bold mb-2">{song.title}</CardTitle>
             <p className="text-lg sm:text-xl text-orange-100">{song.artist}</p>
           </div>
-          <Button
-            onClick={handlePlayPause}
-            size="lg"
-            variant="secondary"
-            className={cn(
-              "w-full sm:w-auto",
-              hasAudioFiles
-                ? "bg-white/20 hover:bg-white/30 text-white border-white/30"
-                : "bg-gray-500/50 cursor-not-allowed text-gray-300",
-            )}
-            disabled={!hasAudioFiles}
-          >
-            {isPlaying ? (
-              <PauseIcon className="w-4 h-4 sm:w-6 sm:h-6" />
-            ) : (
-              <PlayIcon className="w-4 h-4 sm:w-6 sm:h-6" />
-            )}
-            <span className="ml-2">{!hasAudioFiles ? "Sin Audio" : isPlaying ? "Pausar" : "Reproducir"}</span>
-          </Button>
+          {hasAudio && (
+            <div className="flex gap-2">
+              <Button
+                onClick={onRestart}
+                size="sm"
+                variant="secondary"
+                className="w-10 h-10 p-0 bg-white/20 hover:bg-white/30 text-white border-white/30"
+              >
+                <SkipBackIcon className="w-4 h-4" />
+              </Button>
+              <Button
+                onClick={onTogglePlayPause}
+                size="sm"
+                variant="secondary"
+                className="w-10 h-10 p-0 bg-white/20 hover:bg-white/30 text-white border-white/30"
+              >
+                {isPlaying ? (
+                  <PauseIcon className="w-4 h-4" />
+                ) : (
+                  <PlayIcon className="w-4 h-4" />
+                )}
+              </Button>
+            </div>
+          )}
         </div>
       </CardHeader>
 
@@ -231,15 +182,14 @@ export function SongDetails({ song, isDarkMode }: SongDetailsProps) {
           {uploadedFiles.length > 0 ? (
             <div className="mb-4 p-3 rounded-lg bg-green-50 border border-green-200">
               <p className="text-sm text-green-800 font-medium">
-                Archivos disponibles: {uploadedFiles.filter((f) => f.type === "pdf").length} partituras,{" "}
-                {uploadedFiles.filter((f) => f.type === "audio").length} audios
+                Archivos disponibles: {uploadedFiles.filter((f) => f.type === "pdf").length} partituras
               </p>
               <div className="mt-2 flex flex-wrap gap-1">
                 {uploadedFiles
                   .filter((f) => f.type === "pdf")
                   .map((file, index) => (
                     <span key={index} className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                      {file.instrument} - {file.part}
+                      {file.tuning} - {file.scoreType}
                     </span>
                   ))}
               </div>

@@ -17,56 +17,59 @@ interface FileUploadProps {
 }
 
 interface FileWithProgress extends UploadedFile {
-  status: "uploading" | "completed" | "error"
+  status: "pending" | "uploading" | "completed" | "error"
   progress: number
   file?: File
 }
 
+const scoreTypeOptions = [
+  { value: "Melodía", label: "Melodía Principal" },
+  { value: "Acompañamiento", label: "Acompañamiento/Armonía" },
+  { value: "Bajo", label: "Línea de Bajo" },
+]
+
+const tuningOptions = [
+  { value: "Bb", label: "Bb (Trompeta, Tenor Sax, Clarinete)" },
+  { value: "Eb", label: "Eb (Alto Sax, Barítono)" },
+  { value: "C", label: "C (Flauta, Violín, Piano)" },
+  { value: "C clave de Fa", label: "C clave de Fa (Trombón, Tuba, Fagot)" },
+]
+
 export function FileUpload({ themeId, onUploadComplete }: FileUploadProps) {
   const [uploadedFiles, setUploadedFiles] = useState<FileWithProgress[]>([])
   const [isUploading, setIsUploading] = useState(false)
-  const [selectedKey, setSelectedKey] = useState<string>("")
-  const [selectedInstrument, setSelectedInstrument] = useState<string>("")
+  const [selectedScoreType, setSelectedScoreType] = useState<string>("")
+  const [selectedTuning, setSelectedTuning] = useState<string>("")
+  const [pendingFiles, setPendingFiles] = useState<FileWithProgress[]>([])
 
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
       const newFiles: FileWithProgress[] = acceptedFiles.map((file) => {
-        let fileType: "audio" | "pdf" = "pdf"
-
-        if (file.type.startsWith("audio/")) {
-          fileType = "audio"
-        }
+        const fileType: "pdf" = "pdf"
 
         return {
           id: Math.random().toString(36).substr(2, 9),
           name: file.name,
           type: fileType,
           url: "", // Will be set after upload
-          tonality: selectedKey || getKeyFromFileName(file.name) || "C",
-          instrument: selectedInstrument || getInstrumentFromFileName(file.name) || "C",
+          scoreType: selectedScoreType || getScoreTypeFromFileName(file.name) || "Melodía",
+          tuning: selectedTuning || getTuningFromFileName(file.name) || "C",
           part: getPartFromFileName(file.name) || "Melodía",
           themeId,
-          status: "uploading",
+          status: "pending",
           progress: 0,
           file,
         }
       })
 
-      setUploadedFiles((prev) => [...prev, ...newFiles])
-      setIsUploading(true)
-
-      // Process file uploads
-      newFiles.forEach((fileData) => {
-        simulateUpload(fileData)
-      })
+      setPendingFiles((prev) => [...prev, ...newFiles])
     },
-    [selectedKey, selectedInstrument, themeId],
+    [selectedScoreType, selectedTuning, themeId],
   )
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: {
-      "audio/*": [".mp3", ".wav", ".ogg"],
       "application/pdf": [".pdf"],
     },
     multiple: true,
@@ -86,8 +89,8 @@ export function FileUpload({ themeId, onUploadComplete }: FileUploadProps) {
           name: fileData.name,
           type: fileData.type,
           url: fileUrl,
-          tonality: fileData.tonality,
-          instrument: fileData.instrument,
+          scoreType: fileData.scoreType,
+          tuning: fileData.tuning,
           part: fileData.part,
         })
 
@@ -113,8 +116,8 @@ export function FileUpload({ themeId, onUploadComplete }: FileUploadProps) {
                   name: f.name,
                   type: f.type,
                   url: f.url,
-                  tonality: f.tonality,
-                  instrument: f.instrument,
+                  scoreType: f.scoreType,
+                  tuning: f.tuning,
                   part: f.part,
                   themeId: f.themeId,
                 })),
@@ -129,35 +132,20 @@ export function FileUpload({ themeId, onUploadComplete }: FileUploadProps) {
     }, 200)
   }
 
-  const getKeyFromFileName = (fileName: string): string | undefined => {
+  const getScoreTypeFromFileName = (fileName: string): string | undefined => {
     const name = fileName.toLowerCase()
-    const keys = [
-      { pattern: "bb", key: "Bb" },
-      { pattern: "eb", key: "Eb" },
-      { pattern: "c", key: "C" },
-      { pattern: "f", key: "F" },
-      { pattern: "g", key: "G" },
-      { pattern: "d", key: "D" },
-      { pattern: "a", key: "A" },
-      { pattern: "e", key: "E" },
-      { pattern: "b", key: "B" },
-    ]
-    for (const { pattern, key } of keys) {
-      if (name.includes(pattern)) return key
-    }
+    if (name.includes("melody") || name.includes("melodia")) return "Melodía"
+    if (name.includes("accomp") || name.includes("acompañ")) return "Acompañamiento"
+    if (name.includes("bass") || name.includes("bajo")) return "Bajo"
     return undefined
   }
 
-  const getInstrumentFromFileName = (fileName: string): string | undefined => {
+  const getTuningFromFileName = (fileName: string): string | undefined => {
     const name = fileName.toLowerCase()
     if (name.includes("bb") || name.includes("sib")) return "Bb"
     if (name.includes("eb") || name.includes("mib")) return "Eb"
-    if (name.includes("bass") || name.includes("bajo")) return "Bajo"
+    if (name.includes("fa") || name.includes("clef")) return "C clave de Fa"
     if (name.includes("c") && !name.includes("eb")) return "C"
-    if (name.includes("fa") || name.includes("clef")) return "Clave de Fa"
-    if (name.includes("trompet") || name.includes("trumpet")) return "Trompeta"
-    if (name.includes("sax") || name.includes("saxo")) return "Saxofón"
-    if (name.includes("trombon") || name.includes("trombone")) return "Trombón"
     return undefined
   }
 
@@ -172,6 +160,24 @@ export function FileUpload({ themeId, onUploadComplete }: FileUploadProps) {
 
   const removeFile = (fileId: string) => {
     setUploadedFiles((prev) => prev.filter((file) => file.id !== fileId))
+    setPendingFiles((prev) => prev.filter((file) => file.id !== fileId))
+  }
+
+  const confirmUpload = () => {
+    if (pendingFiles.length === 0) return
+    
+    setIsUploading(true)
+    setUploadedFiles((prev) => [...prev, ...pendingFiles.map(f => ({ ...f, status: "uploading" as const }))])
+    setPendingFiles([])
+    
+    // Process file uploads
+    pendingFiles.forEach((fileData) => {
+      simulateUpload({ ...fileData, status: "uploading" as const })
+    })
+  }
+
+  const clearPendingFiles = () => {
+    setPendingFiles([])
   }
 
   const formatFileSize = (bytes: number) => {
@@ -187,45 +193,37 @@ export function FileUpload({ themeId, onUploadComplete }: FileUploadProps) {
       <Card>
         <CardHeader>
           <CardTitle>Configuración de Archivos</CardTitle>
-          <CardDescription>Configura la tonalidad e instrumento antes de subir archivos</CardDescription>
+          <CardDescription>Configura el tipo de partitura y afinación antes de subir archivos</CardDescription>
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <Label htmlFor="key-select">Tonalidad</Label>
-            <Select value={selectedKey} onValueChange={setSelectedKey}>
+            <Label htmlFor="score-type-select">Tipo de Partitura</Label>
+            <Select value={selectedScoreType} onValueChange={setSelectedScoreType}>
               <SelectTrigger>
-                <SelectValue placeholder="Selecciona tonalidad" />
+                <SelectValue placeholder="Selecciona tipo de partitura" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="C">C (Do Mayor)</SelectItem>
-                <SelectItem value="Db">Db (Re♭ Mayor)</SelectItem>
-                <SelectItem value="D">D (Re Mayor)</SelectItem>
-                <SelectItem value="Eb">Eb (Mi♭ Mayor)</SelectItem>
-                <SelectItem value="E">E (Mi Mayor)</SelectItem>
-                <SelectItem value="F">F (Fa Mayor)</SelectItem>
-                <SelectItem value="F#">F# (Fa# Mayor)</SelectItem>
-                <SelectItem value="G">G (Sol Mayor)</SelectItem>
-                <SelectItem value="Ab">Ab (La♭ Mayor)</SelectItem>
-                <SelectItem value="A">A (La Mayor)</SelectItem>
-                <SelectItem value="Bb">Bb (Si♭ Mayor)</SelectItem>
-                <SelectItem value="B">B (Si Mayor)</SelectItem>
+                {scoreTypeOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
 
           <div>
-            <Label htmlFor="instrument-select">Instrumento</Label>
-            <Select value={selectedInstrument} onValueChange={setSelectedInstrument}>
+            <Label htmlFor="tuning-select">Afinación</Label>
+            <Select value={selectedTuning} onValueChange={setSelectedTuning}>
               <SelectTrigger>
-                <SelectValue placeholder="Selecciona instrumento" />
+                <SelectValue placeholder="Selecciona afinación" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="Bb">Bb (Trompeta, Saxo Tenor)</SelectItem>
-                <SelectItem value="Eb">Eb (Saxo Alto, Barítono)</SelectItem>
-                <SelectItem value="C">C (Piano, Guitarra)</SelectItem>
-                <SelectItem value="Bajo">Bajo</SelectItem>
-                <SelectItem value="Clave de Fa">Clave de Fa (Trombón)</SelectItem>
-                <SelectItem value="Batería">Batería</SelectItem>
+                {tuningOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -242,7 +240,7 @@ export function FileUpload({ themeId, onUploadComplete }: FileUploadProps) {
             <div className="space-y-1">
               <p>Arrastra archivos aquí o haz clic para seleccionar</p>
               <p className="text-xs">
-                <strong>Audio:</strong> MP3, WAV (máx. 50MB) | <strong>PDFs:</strong> Partituras (máx. 10MB)
+                <strong>PDFs:</strong> Partituras (máx. 10MB)
               </p>
             </div>
           </CardDescription>
@@ -262,10 +260,54 @@ export function FileUpload({ themeId, onUploadComplete }: FileUploadProps) {
             ) : (
               <div>
                 <p className="text-gray-600 font-medium mb-2">Arrastra archivos aquí o haz clic para seleccionar</p>
-                <p className="text-sm text-gray-500">Soporta: Audio (MP3, WAV), Partituras (PDF)</p>
+                <p className="text-sm text-gray-500">Soporta: Solo Partituras (PDF)</p>
               </div>
             )}
           </div>
+
+          {/* Pending Files List */}
+          {pendingFiles.length > 0 && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h4 className="font-medium text-gray-900">Archivos Pendientes</h4>
+                <div className="flex gap-2">
+                  <Button onClick={clearPendingFiles} variant="outline" size="sm">
+                    Limpiar
+                  </Button>
+                  <Button onClick={confirmUpload} size="sm" className="bg-orange-500 hover:bg-orange-600">
+                    Confirmar Subida ({pendingFiles.length})
+                  </Button>
+                </div>
+              </div>
+              {pendingFiles.map((file) => (
+                <div key={file.id} className="flex items-center space-x-3 p-3 border rounded-lg bg-yellow-50 border-yellow-200">
+                  <div className="flex-shrink-0">
+                    <FileText className="w-5 h-5 text-blue-500" />
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between mb-1">
+                      <p className="text-sm font-medium text-gray-900 truncate">{file.name}</p>
+                      <div className="flex items-center space-x-2">
+                        <Badge variant="outline" className="text-xs bg-orange-100 text-orange-800">
+                          {file.scoreType}
+                        </Badge>
+                        <Badge variant="outline" className="text-xs bg-blue-100 text-blue-800">
+                          {file.tuning}
+                        </Badge>
+                        <span className="text-xs text-gray-500">{file.file ? formatFileSize(file.file.size) : ""}</span>
+                      </div>
+                    </div>
+                    <p className="text-xs text-yellow-700">Pendiente de confirmación</p>
+                  </div>
+
+                  <Button size="sm" variant="ghost" onClick={() => removeFile(file.id)} className="flex-shrink-0">
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
 
           {/* Uploaded Files List */}
           {uploadedFiles.length > 0 && (
@@ -274,8 +316,7 @@ export function FileUpload({ themeId, onUploadComplete }: FileUploadProps) {
               {uploadedFiles.map((file) => (
                 <div key={file.id} className="flex items-center space-x-3 p-3 border rounded-lg bg-gray-50">
                   <div className="flex-shrink-0">
-                    {file.type === "audio" && <Volume2 className="w-5 h-5 text-green-500" />}
-                    {file.type === "pdf" && <FileText className="w-5 h-5 text-blue-500" />}
+                    <FileText className="w-5 h-5 text-blue-500" />
                   </div>
 
                   <div className="flex-1 min-w-0">
@@ -283,16 +324,21 @@ export function FileUpload({ themeId, onUploadComplete }: FileUploadProps) {
                       <p className="text-sm font-medium text-gray-900 truncate">{file.name}</p>
                       <div className="flex items-center space-x-2">
                         <Badge variant="outline" className="text-xs">
-                          {file.tonality}
+                          {file.scoreType}
                         </Badge>
                         <Badge variant="outline" className="text-xs">
-                          {file.instrument}
+                          {file.tuning}
                         </Badge>
                         <span className="text-xs text-gray-500">{file.file ? formatFileSize(file.file.size) : ""}</span>
                       </div>
                     </div>
 
                     {file.status === "uploading" && <Progress value={file.progress} className="h-2" />}
+                    {file.status === "pending" && (
+                      <div className="flex items-center space-x-1 text-yellow-600">
+                        <span className="text-xs">Pendiente de confirmación</span>
+                      </div>
+                    )}
 
                     {file.status === "completed" && (
                       <div className="flex items-center space-x-1 text-green-600">

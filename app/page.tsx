@@ -18,7 +18,7 @@ interface Song {
   tempo: string
   structure: string
   description: string
-  audioUrl: string
+  audioUrl?: string
 }
 
 const convertThemeToSong = (theme: Theme): Song => ({
@@ -30,8 +30,7 @@ const convertThemeToSong = (theme: Theme): Song => ({
   tempo: theme.tempo,
   structure: theme.structure,
   description: theme.description,
-  audioUrl:
-    theme.files.find((f) => f.type === "audio")?.url || `/audio/${theme.title.toLowerCase().replace(/\s+/g, "-")}.mp3`,
+  audioUrl: theme.audioUrl || `/audio/${theme.title.toLowerCase().replace(/\s+/g, "-")}.mp3`,
 })
 
 export default function JamDeVientosPage() {
@@ -44,12 +43,20 @@ export default function JamDeVientosPage() {
   const { user, isAuthenticated } = useAuth()
 
   useEffect(() => {
-    const loadedThemes = getThemes()
-    setThemes(loadedThemes)
-    const convertedSongs = loadedThemes.map(convertThemeToSong)
-    setSongs(convertedSongs)
-    if (convertedSongs.length > 0) {
-      setSelectedSong(convertedSongs[0])
+    try {
+      const loadedThemes = getThemes()
+      setThemes(loadedThemes)
+      const convertedSongs = loadedThemes.map(convertThemeToSong)
+      setSongs(convertedSongs)
+      if (convertedSongs.length > 0) {
+        setSelectedSong(convertedSongs[0])
+      }
+    } catch (error) {
+      console.error("Error loading themes:", error)
+      // Fallback to empty state
+      setThemes([])
+      setSongs([])
+      setSelectedSong(null)
     }
   }, [])
 
@@ -57,21 +64,66 @@ export default function JamDeVientosPage() {
     setIsDarkMode(!isDarkMode)
   }
 
+  const [isPlaying, setIsPlaying] = useState(false)
+  const [currentAudio, setCurrentAudio] = useState<HTMLAudioElement | null>(null)
+
   const handleSongSelect = (song: Song) => {
     setSelectedSong(song)
-
-    // Auto-play audio when song is selected
-    if (audioRef.current) {
-      audioRef.current.pause()
-      audioRef.current.currentTime = 0
+    
+    // Stop current audio if playing
+    if (currentAudio) {
+      currentAudio.pause()
+      setIsPlaying(false)
     }
 
-    // Create new audio instance for the selected song
-    audioRef.current = new Audio(song.audioUrl)
-    audioRef.current.volume = 0.7
-    audioRef.current.play().catch((error) => {
-      console.log("Audio autoplay prevented:", error)
-    })
+    // Create new audio instance and auto-play
+    if (song.audioUrl) {
+      const newAudio = new Audio(song.audioUrl)
+      newAudio.volume = 0.7
+      
+      newAudio.addEventListener('ended', () => {
+        setIsPlaying(false)
+      })
+      
+      newAudio.addEventListener('loadeddata', () => {
+        newAudio.play().then(() => {
+          setIsPlaying(true)
+        }).catch((error) => {
+          console.log("Audio autoplay prevented:", error)
+          setIsPlaying(false)
+        })
+      })
+      
+      setCurrentAudio(newAudio)
+    }
+  }
+
+  const togglePlayPause = () => {
+    if (currentAudio) {
+      if (isPlaying) {
+        currentAudio.pause()
+        setIsPlaying(false)
+      } else {
+        currentAudio.play().then(() => {
+          setIsPlaying(true)
+        }).catch((error) => {
+          console.log("Audio play error:", error)
+        })
+      }
+    }
+  }
+
+  const restartAudio = () => {
+    if (currentAudio) {
+      currentAudio.currentTime = 0
+      if (!isPlaying) {
+        currentAudio.play().then(() => {
+          setIsPlaying(true)
+        }).catch((error) => {
+          console.log("Audio play error:", error)
+        })
+      }
+    }
   }
 
   if (!selectedSong || songs.length === 0) {
@@ -196,14 +248,14 @@ export default function JamDeVientosPage() {
             <div className="flex items-center gap-2 sm:gap-3">
               <button
                 onClick={toggleDarkMode}
-                className="flex items-center gap-1 sm:gap-2 bg-black/20 hover:bg-black/40 px-2 sm:px-3 py-1 rounded-full backdrop-blur-sm border border-white/20 transition-all duration-300"
+                className="flex items-center justify-center bg-black/20 hover:bg-black/40 w-8 h-8 sm:w-9 sm:h-9 rounded-full backdrop-blur-sm border border-white/20 transition-all duration-300"
+                title={isDarkMode ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
               >
                 {isDarkMode ? (
-                  <SunIcon className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5" />
+                  <SunIcon className="w-4 h-4 sm:w-5 sm:h-5" />
                 ) : (
-                  <MoonIcon className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5" />
+                  <MoonIcon className="w-4 h-4 sm:w-5 sm:h-5" />
                 )}
-                <span className="hidden sm:inline">{isDarkMode ? "Modo Claro" : "Modo Oscuro"}</span>
               </button>
 
               {isAuthenticated && user?.role === "admin" && (
@@ -243,11 +295,20 @@ export default function JamDeVientosPage() {
             selectedSong={selectedSong}
             onSongSelect={handleSongSelect}
             isDarkMode={isDarkMode}
+            isPlaying={isPlaying}
+            onTogglePlayPause={togglePlayPause}
+            onRestart={restartAudio}
           />
         </div>
 
         {/* Song Details */}
-        <SongDetails song={selectedSong} isDarkMode={isDarkMode} />
+        <SongDetails 
+          song={selectedSong} 
+          isDarkMode={isDarkMode}
+          isPlaying={isPlaying}
+          onTogglePlayPause={togglePlayPause}
+          onRestart={restartAudio}
+        />
       </main>
 
       <footer className="bg-gradient-to-r from-orange-500 to-orange-600 text-white py-4 sm:py-6 md:py-8 mt-8 sm:mt-12 md:mt-16 relative">

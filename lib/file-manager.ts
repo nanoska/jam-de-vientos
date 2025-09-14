@@ -1,10 +1,10 @@
 export interface UploadedFile {
   id: string
   name: string
-  type: "audio" | "pdf"
+  type: "pdf"
   url: string
-  tonality: string
-  instrument: string
+  scoreType: string // Melodía, Acompañamiento, Bajo
+  tuning: string // Bb, Eb, C, C clave de Fa
   part: string
   themeId: string
 }
@@ -18,7 +18,8 @@ export interface Theme {
   tempo: string
   structure: string
   description: string
-  files: UploadedFile[]
+  audioUrl?: string // Audio único del tema
+  files: UploadedFile[] // Solo PDFs
 }
 
 // Simulated storage - in production this would be a database
@@ -84,7 +85,34 @@ export const addTheme = (theme: Omit<Theme, "id">): Theme => {
   return newTheme
 }
 
-export const addFileToTheme = (themeId: string, file: Omit<UploadedFile, "id" | "themeId">): UploadedFile => {
+export function updateThemeAudio(themeId: string, audioUrl: string): Theme | null {
+  const theme = themes.find((t) => t.id === themeId)
+  if (theme) {
+    theme.audioUrl = audioUrl
+    return theme
+  }
+  return null
+}
+
+export function updateTheme(themeId: string, updates: Partial<Omit<Theme, 'id' | 'files'>>): Theme | null {
+  const theme = themes.find((t) => t.id === themeId)
+  if (theme) {
+    Object.assign(theme, updates)
+    return theme
+  }
+  return null
+}
+
+export function deleteTheme(themeId: string): boolean {
+  const index = themes.findIndex((t) => t.id === themeId)
+  if (index !== -1) {
+    themes.splice(index, 1)
+    return true
+  }
+  return false
+}
+
+export function addFileToTheme(themeId: string, file: Omit<UploadedFile, "id" | "themeId">): UploadedFile {
   const newFile: UploadedFile = {
     ...file,
     id: Date.now().toString(),
@@ -99,9 +127,9 @@ export const addFileToTheme = (themeId: string, file: Omit<UploadedFile, "id" | 
   return newFile
 }
 
-export const getFilesByTheme = (themeId: string, type?: "audio" | "pdf"): UploadedFile[] => {
+export const getFilesByTheme = (themeId: string): UploadedFile[] => {
   const theme = themes.find((t) => t.id === themeId)
   if (!theme) return []
 
-  return type ? theme.files.filter((f) => f.type === type) : theme.files
+  return theme.files // Solo PDFs
 }
