@@ -227,7 +227,7 @@ export function SongDetails({ song, isDarkMode, isPlaying, onTogglePlayPause, on
                     disabled={!isAvailable}
                     className={cn(
                       "p-3 rounded-lg border-2 text-left transition-all duration-200",
-                      isSelected && isAvailable
+                      isSelected
                         ? "border-orange-500 bg-orange-50 text-orange-800"
                         : isAvailable
                           ? isDarkMode

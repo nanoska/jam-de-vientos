@@ -153,7 +153,10 @@ export function SongCarousel({ songs, selectedSong, onSongSelect, isDarkMode, is
   return (
     <div className="relative h-64 sm:h-80 md:h-96 overflow-hidden">
       {/* Desktop 3D Carousel */}
-      <div className="hidden md:flex relative w-full h-full items-center justify-center px-4" style={{ perspective: "1000px" }}>
+      <div className={cn(
+        "relative w-full h-full items-center justify-center px-4",
+        isMobile ? "hidden" : "flex"
+      )} style={{ perspective: "1000px" }}>
         {songs.map((song, index) => {
           const style = getItemStyle(index)
           const isCenter = index === currentIndex
@@ -221,84 +224,10 @@ export function SongCarousel({ songs, selectedSong, onSongSelect, isDarkMode, is
       {/* Mobile Horizontal Scroll */}
       <div 
         ref={scrollContainerRef}
-        className="md:hidden flex items-center h-full overflow-x-auto scrollbar-hide px-4 gap-4 cursor-grab active:cursor-grabbing"
-        style={{ scrollSnapType: "x mandatory" }}
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-      >
-        {songs.map((song, index) => {
-          const isSelected = song.id === selectedSong.id
-          const hasAudio = !!song.audioUrl
-
-          return (
-            <div
-              key={song.id}
-              className={cn(
-                "flex-shrink-0 relative cursor-pointer transition-all duration-300",
-                "w-48 h-48 rounded-lg overflow-hidden",
-                isSelected ? "ring-4 ring-orange-500 scale-105" : "hover:scale-102"
-              )}
-              style={{ scrollSnapAlign: "center" }}
-              onClick={() => handleSongClick(song, index)}
-            >
-              <Image
-                src={song.image}
-                alt={song.title}
-                fill
-                className="object-cover"
-                sizes="(max-width: 768px) 192px, 256px"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-
-              {isSelected && hasAudio && (
-                <div className="absolute top-2 right-2 flex gap-1">
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    className="w-8 h-8 p-0 bg-black/50 hover:bg-black/70 border-0"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onRestart()
-                    }}
-                  >
-                    <SkipBackIcon className="w-3 h-3 text-white" />
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    className="w-8 h-8 p-0 bg-black/50 hover:bg-black/70 border-0"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onTogglePlayPause()
-                    }}
-                  >
-                    {isPlaying ? (
-                      <PauseIcon className="w-3 h-3 text-white" />
-                    ) : (
-                      <PlayIcon className="w-3 h-3 text-white" />
-                    )}
-                  </Button>
-                </div>
-              )}
-
-              <div className="absolute bottom-2 left-2 right-2 text-white">
-                <h3 className="font-bold text-sm mb-1 text-balance">{song.title}</h3>
-                <p className="text-xs opacity-90 text-balance">{song.artist}</p>
-              </div>
-            </div>
-          )
-        })}
-      </div>
-
-      {/* Mobile Horizontal Scroll */}
-      <div 
-        ref={scrollContainerRef}
-        className="md:hidden flex items-center h-full overflow-x-auto scrollbar-hide px-4 gap-4 cursor-grab active:cursor-grabbing"
+        className={cn(
+          "flex items-center h-full overflow-x-auto scrollbar-hide px-4 gap-4 cursor-grab active:cursor-grabbing",
+          isMobile ? "flex" : "hidden"
+        )}
         style={{ scrollSnapType: "x mandatory" }}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
@@ -373,7 +302,10 @@ export function SongCarousel({ songs, selectedSong, onSongSelect, isDarkMode, is
       </div>
 
       {/* Desktop indicators only */}
-      <div className="hidden md:flex absolute bottom-2 sm:bottom-4 left-1/2 transform -translate-x-1/2 gap-2">
+      <div className={cn(
+        "absolute bottom-2 sm:bottom-4 left-1/2 transform -translate-x-1/2 gap-2",
+        isMobile ? "hidden" : "flex"
+      )}>
         {songs.map((_, index) => (
           <button
             key={index}
