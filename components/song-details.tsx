@@ -31,7 +31,8 @@ interface SongDetailsProps {
 const instrumentOptions = [
   { id: "Bb", label: "Bb (Trompeta, Tenor Sax, Clarinete)", transposition: "Bb" },
   { id: "Eb", label: "Eb (Alto Sax, Barítono)", transposition: "Eb" },
-  { id: "C", label: "C (Flauta, Violín, Piano)", transposition: "C" },
+  { id: "C", label: "C (Flauta, Oboe)", transposition: "C" },
+  { id: "F", label: "F (Corno)", transposition: "F" },
   { id: "Clave de Fa", label: "Clave de Fa (Trombón, Tuba, Fagot)", transposition: "Bass Clef" },
 ]
 
@@ -80,8 +81,15 @@ export function SongDetails({ song, isDarkMode, isPlaying, onTogglePlayPause, on
     }
   }
 
-  const isDownloadAvailable = () => {
-    return uploadedFiles.some((f) => f.type === "pdf" && f.tuning === selectedInstrument && f.scoreType === selectedPart)
+  const isDownloadAvailable = (instrument: string, part: string) => {
+    return uploadedFiles.some((f) => f.type === "pdf" && f.tuning === instrument && f.scoreType === part)
+  }
+
+  const getAvailableInstruments = () => {
+    return instrumentOptions.map(instrument => ({
+      ...instrument,
+      isAvailable: isDownloadAvailable(instrument.id, selectedPart)
+    }))
   }
 
   const hasAudio = !!song.audioUrl
@@ -208,23 +216,36 @@ export function SongDetails({ song, isDarkMode, isPlaying, onTogglePlayPause, on
               Selecciona tu instrumento:
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {instrumentOptions.map((instrument) => (
-                <button
-                  key={instrument.id}
-                  onClick={() => setSelectedInstrument(instrument.id)}
-                  className={cn(
-                    "p-3 rounded-lg border-2 text-left transition-all duration-200",
-                    selectedInstrument === instrument.id
-                      ? "border-orange-500 bg-orange-50 text-orange-800"
-                      : isDarkMode
-                        ? "border-gray-600 hover:border-gray-500 text-gray-300 bg-gray-700/50"
-                        : "border-gray-200 hover:border-gray-300 text-gray-700",
-                  )}
-                >
-                  <div className="font-medium text-sm sm:text-base">{instrument.label}</div>
-                  <div className="text-xs sm:text-sm opacity-75">Afinación: {instrument.transposition}</div>
-                </button>
-              ))}
+              {getAvailableInstruments().map((instrument) => {
+                const isSelected = selectedInstrument === instrument.id
+                const isAvailable = instrument.isAvailable
+                
+                return (
+                  <button
+                    key={instrument.id}
+                    onClick={() => isAvailable && setSelectedInstrument(instrument.id)}
+                    disabled={!isAvailable}
+                    className={cn(
+                      "p-3 rounded-lg border-2 text-left transition-all duration-200",
+                      isSelected && isAvailable
+                        ? "border-orange-500 bg-orange-50 text-orange-800"
+                        : isAvailable
+                          ? isDarkMode
+                            ? "border-green-400 hover:border-green-300 text-green-300 bg-green-900/20"
+                            : "border-green-400 hover:border-green-500 text-green-700 bg-green-50"
+                          : isDarkMode
+                            ? "border-gray-600 text-gray-500 bg-gray-800/50 cursor-not-allowed opacity-50"
+                            : "border-gray-300 text-gray-400 bg-gray-100 cursor-not-allowed opacity-50",
+                    )}
+                  >
+                    <div className="font-medium text-sm sm:text-base">{instrument.label}</div>
+                    <div className="text-xs sm:text-sm opacity-75">Afinación: {instrument.transposition}</div>
+                    {!isAvailable && (
+                      <div className="text-xs mt-1 font-medium text-red-500">No disponible</div>
+                    )}
+                  </button>
+                )
+              })}
             </div>
           </div>
 
@@ -255,14 +276,14 @@ export function SongDetails({ song, isDarkMode, isPlaying, onTogglePlayPause, on
             size="lg"
             className={cn(
               "w-full sm:w-auto",
-              isDownloadAvailable()
+              isDownloadAvailable(selectedInstrument, selectedPart)
                 ? "bg-orange-500 hover:bg-orange-600 text-white"
                 : "bg-gray-400 cursor-not-allowed text-gray-200",
             )}
-            disabled={!isDownloadAvailable()}
+            disabled={!isDownloadAvailable(selectedInstrument, selectedPart)}
           >
             <DownloadIcon className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-            {isDownloadAvailable() ? "Descargar Partitura" : "No Disponible"}
+            {isDownloadAvailable(selectedInstrument, selectedPart) ? "Descargar Partitura" : "No Disponible"}
           </Button>
         </div>
       </CardContent>

@@ -24,15 +24,16 @@ interface FileWithProgress extends UploadedFile {
 
 const scoreTypeOptions = [
   { value: "Melodía", label: "Melodía Principal" },
-  { value: "Acompañamiento", label: "Acompañamiento/Armonía" },
+  { value: "Armonía", label: "Armonía/Contrapunto" },
   { value: "Bajo", label: "Línea de Bajo" },
 ]
 
 const tuningOptions = [
   { value: "Bb", label: "Bb (Trompeta, Tenor Sax, Clarinete)" },
   { value: "Eb", label: "Eb (Alto Sax, Barítono)" },
-  { value: "C", label: "C (Flauta, Violín, Piano)" },
-  { value: "C clave de Fa", label: "C clave de Fa (Trombón, Tuba, Fagot)" },
+  { value: "C", label: "C (Flauta, Oboe)" },
+  { value: "F", label: "F (Corno)" },
+  { value: "Clave de Fa", label: "Clave de Fa (Trombón, Tuba, Fagot)" },
 ]
 
 export function FileUpload({ themeId, onUploadComplete }: FileUploadProps) {

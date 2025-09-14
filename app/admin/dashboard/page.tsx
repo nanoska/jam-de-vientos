@@ -63,6 +63,7 @@ interface NewSong {
   structure: string
   description: string
   image: File | null
+  audioFile: File | null
 }
 
 interface EditSong extends NewSong {
@@ -85,6 +86,7 @@ export default function AdminDashboard() {
     structure: "",
     description: "",
     image: null,
+    audioFile: null,
   })
   const [editSong, setEditSong] = useState<EditSong>({
     id: "",
@@ -115,6 +117,13 @@ export default function AdminDashboard() {
     }
   }
 
+  const handleAudioUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      setNewSong((prev) => ({ ...prev, audioFile: file }))
+    }
+  }
+
   const handleCreateSong = () => {
     if (newSong.title && newSong.artist && newSong.keyNote && newSong.keyScale) {
       let imageUrl = "/placeholder-442ix.png"
@@ -125,6 +134,11 @@ export default function AdminDashboard() {
       const key = `${newSong.keyNote} ${newSong.keyScale}`
       const tempo = newSong.tempo ? `${newSong.tempo} BPM` : "120 BPM"
 
+      let audioUrl: string | undefined
+      if (newSong.audioFile) {
+        audioUrl = URL.createObjectURL(newSong.audioFile)
+      }
+
       const newTheme = addTheme({
         title: newSong.title,
         artist: newSong.artist,
@@ -133,11 +147,12 @@ export default function AdminDashboard() {
         tempo: tempo,
         structure: newSong.structure || "Intro - A - B - A - B - Outro",
         description: newSong.description || "Nuevo tema agregado al repertorio.",
+        audioUrl: audioUrl,
         files: [],
       })
 
       setThemes(getThemes())
-      setNewSong({ title: "", artist: "", keyNote: "", keyScale: "", tempo: "", structure: "", description: "", image: null })
+      setNewSong({ title: "", artist: "", keyNote: "", keyScale: "", tempo: "", structure: "", description: "", image: null, audioFile: null })
       setShowNewSongForm(false)
 
       console.log("[v0] New theme created:", newTheme)
@@ -450,11 +465,20 @@ export default function AdminDashboard() {
                   />
                 </div>
 
-                <div>
-                  <Label htmlFor="image">Imagen del Tema</Label>
-                  <div className="flex items-center space-x-2">
-                    <Input id="image" type="file" accept="image/*" onChange={handleImageUpload} className="flex-1" />
-                    <div className="text-xs text-gray-500 whitespace-nowrap">Recomendado: 400x300px</div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="image">Imagen del Tema</Label>
+                    <div className="flex items-center space-x-2">
+                      <Input id="image" type="file" accept="image/*" onChange={handleImageUpload} className="flex-1" />
+                      <div className="text-xs text-gray-500 whitespace-nowrap">400x300px</div>
+                    </div>
+                  </div>
+                  <div>
+                    <Label htmlFor="audio">Audio del Tema</Label>
+                    <div className="flex items-center space-x-2">
+                      <Input id="audio" type="file" accept="audio/*" onChange={handleAudioUpload} className="flex-1" />
+                      <div className="text-xs text-gray-500 whitespace-nowrap">MP3, WAV</div>
+                    </div>
                   </div>
                 </div>
 
