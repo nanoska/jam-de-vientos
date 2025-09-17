@@ -104,6 +104,20 @@ export function SongCarousel({ songs, selectedSong, onSongSelect, isDarkMode, is
     const diff = index - currentIndex
     const absIndex = Math.abs(diff)
 
+    // Responsive values based on screen size
+    const translateX = {
+      adjacent: isMobile ? 80 : 200,
+      second: isMobile ? 140 : 350,
+      hidden: isMobile ? 180 : 450
+    }
+    
+    const scale = {
+      center: 1,
+      adjacent: isMobile ? 0.75 : 0.8,
+      second: isMobile ? 0.6 : 0.6,
+      hidden: isMobile ? 0.5 : 0.4
+    }
+
     if (absIndex === 0) {
       // Center item
       return {
@@ -115,7 +129,7 @@ export function SongCarousel({ songs, selectedSong, onSongSelect, isDarkMode, is
       // Adjacent items
       const direction = diff > 0 ? 1 : -1
       return {
-        transform: `translateX(${direction * (isMobile ? 120 : 200)}px) rotateY(${-direction * 45}deg) scale(${isMobile ? 0.7 : 0.8})`,
+        transform: `translateX(${direction * translateX.adjacent}px) rotateY(${-direction * 45}deg) scale(${scale.adjacent})`,
         zIndex: 5,
         opacity: 0.7,
       }
@@ -123,7 +137,7 @@ export function SongCarousel({ songs, selectedSong, onSongSelect, isDarkMode, is
       // Second level items
       const direction = diff > 0 ? 1 : -1
       return {
-        transform: `translateX(${direction * (isMobile ? 200 : 350)}px) rotateY(${-direction * 60}deg) scale(${isMobile ? 0.5 : 0.6})`,
+        transform: `translateX(${direction * translateX.second}px) rotateY(${-direction * 60}deg) scale(${scale.second})`,
         zIndex: 2,
         opacity: 0.4,
       }
@@ -131,7 +145,7 @@ export function SongCarousel({ songs, selectedSong, onSongSelect, isDarkMode, is
       // Hidden items
       const direction = diff > 0 ? 1 : -1
       return {
-        transform: `translateX(${direction * (isMobile ? 250 : 450)}px) rotateY(${-direction * 75}deg) scale(0.4)`,
+        transform: `translateX(${direction * translateX.hidden}px) rotateY(${-direction * 75}deg) scale(${scale.hidden})`,
         zIndex: 1,
         opacity: 0.2,
       }
@@ -152,11 +166,8 @@ export function SongCarousel({ songs, selectedSong, onSongSelect, isDarkMode, is
 
   return (
     <div className="relative h-64 sm:h-80 md:h-96 overflow-hidden">
-      {/* Desktop 3D Carousel */}
-      <div className={cn(
-        "relative w-full h-full items-center justify-center px-4",
-        isMobile ? "hidden" : "flex"
-      )} style={{ perspective: "1000px" }}>
+      {/* 3D Carousel - Always visible, responsive */}
+      <div className="relative w-full h-full flex items-center justify-center px-2 sm:px-4" style={{ perspective: isMobile ? "800px" : "1000px" }}>
         {songs.map((song, index) => {
           const style = getItemStyle(index)
           const isCenter = index === currentIndex
@@ -173,7 +184,7 @@ export function SongCarousel({ songs, selectedSong, onSongSelect, isDarkMode, is
               onClick={() => handleSongClick(song, index)}
             >
               <div
-                className={`relative w-40 h-52 sm:w-48 sm:h-60 md:w-64 md:h-80 rounded-xl overflow-hidden shadow-2xl ${
+                className={`relative w-32 h-40 sm:w-40 sm:h-52 md:w-48 md:h-60 lg:w-64 lg:h-80 rounded-xl overflow-hidden shadow-2xl ${
                   isDarkMode ? "bg-gray-800" : "bg-white"
                 }`}
               >
@@ -182,7 +193,7 @@ export function SongCarousel({ songs, selectedSong, onSongSelect, isDarkMode, is
                   alt={`${song.title} by ${song.artist}`}
                   fill
                   className="object-cover"
-                  sizes="(max-width: 640px) 160px, (max-width: 768px) 192px, 256px"
+                  sizes="(max-width: 640px) 128px, (max-width: 768px) 160px, (max-width: 1024px) 192px, 256px"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
 
@@ -221,91 +232,8 @@ export function SongCarousel({ songs, selectedSong, onSongSelect, isDarkMode, is
         })}
       </div>
 
-      {/* Mobile Horizontal Scroll */}
-      <div 
-        ref={scrollContainerRef}
-        className={cn(
-          "flex items-center h-full overflow-x-auto scrollbar-hide px-4 gap-4 cursor-grab active:cursor-grabbing",
-          isMobile ? "flex" : "hidden"
-        )}
-        style={{ scrollSnapType: "x mandatory" }}
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-      >
-        {songs.map((song, index) => {
-          const isSelected = song.id === selectedSong.id
-          const hasAudio = !!song.audioUrl
-
-          return (
-            <div
-              key={song.id}
-              className={cn(
-                "flex-shrink-0 relative cursor-pointer transition-all duration-300",
-                "w-48 h-48 rounded-lg overflow-hidden",
-                isSelected ? "ring-4 ring-orange-500 scale-105" : "hover:scale-102"
-              )}
-              style={{ scrollSnapAlign: "center" }}
-              onClick={() => handleSongClick(song, index)}
-            >
-              <Image
-                src={song.image}
-                alt={song.title}
-                fill
-                className="object-cover"
-                sizes="(max-width: 768px) 192px, 256px"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-
-              {isSelected && hasAudio && (
-                <div className="absolute top-2 right-2 flex gap-1">
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    className="w-8 h-8 p-0 bg-black/50 hover:bg-black/70 border-0"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onRestart()
-                    }}
-                  >
-                    <SkipBackIcon className="w-3 h-3 text-white" />
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    className="w-8 h-8 p-0 bg-black/50 hover:bg-black/70 border-0"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onTogglePlayPause()
-                    }}
-                  >
-                    {isPlaying ? (
-                      <PauseIcon className="w-3 h-3 text-white" />
-                    ) : (
-                      <PlayIcon className="w-3 h-3 text-white" />
-                    )}
-                  </Button>
-                </div>
-              )}
-
-              <div className="absolute bottom-2 left-2 right-2 text-white">
-                <h3 className="font-bold text-sm mb-1 text-balance">{song.title}</h3>
-                <p className="text-xs opacity-90 text-balance">{song.artist}</p>
-              </div>
-            </div>
-          )
-        })}
-      </div>
-
-      {/* Desktop indicators only */}
-      <div className={cn(
-        "absolute bottom-2 sm:bottom-4 left-1/2 transform -translate-x-1/2 gap-2",
-        isMobile ? "hidden" : "flex"
-      )}>
+      {/* Navigation indicators - Always visible */}
+      <div className="absolute bottom-2 sm:bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2">
         {songs.map((_, index) => (
           <button
             key={index}
