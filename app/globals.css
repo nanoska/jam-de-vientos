@@ -4,6 +4,42 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
+  /* Fallback colors for older browsers */
+  --background: #ffffff;
+  --foreground: #0a0a0a;
+  --card: #ffffff;
+  --card-foreground: #0a0a0a;
+  --popover: #ffffff;
+  --popover-foreground: #0a0a0a;
+  --primary: #171717;
+  --primary-foreground: #fafafa;
+  --secondary: #f5f5f5;
+  --secondary-foreground: #171717;
+  --muted: #f5f5f5;
+  --muted-foreground: #737373;
+  --accent: #f5f5f5;
+  --accent-foreground: #171717;
+  --destructive: #dc2626;
+  --destructive-foreground: #dc2626;
+  --border: #e5e5e5;
+  --input: #e5e5e5;
+  --ring: #a3a3a3;
+  --chart-1: #f97316;
+  --chart-2: #3b82f6;
+  --chart-3: #8b5cf6;
+  --chart-4: #10b981;
+  --chart-5: #f59e0b;
+  --radius: 0.625rem;
+  --sidebar: #fafafa;
+  --sidebar-foreground: #0a0a0a;
+  --sidebar-primary: #171717;
+  --sidebar-primary-foreground: #fafafa;
+  --sidebar-accent: #f5f5f5;
+  --sidebar-accent-foreground: #171717;
+  --sidebar-border: #e5e5e5;
+  --sidebar-ring: #a3a3a3;
+
+  /* Modern oklch colors for supported browsers */
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -28,7 +64,6 @@
   --chart-3: oklch(0.398 0.07 227.392);
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
-  --radius: 0.625rem;
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: oklch(0.205 0 0);
@@ -40,6 +75,41 @@
 }
 
 .dark {
+  /* Fallback colors for older browsers */
+  --background: #0a0a0a;
+  --foreground: #fafafa;
+  --card: #0a0a0a;
+  --card-foreground: #fafafa;
+  --popover: #0a0a0a;
+  --popover-foreground: #fafafa;
+  --primary: #fafafa;
+  --primary-foreground: #171717;
+  --secondary: #262626;
+  --secondary-foreground: #fafafa;
+  --muted: #262626;
+  --muted-foreground: #a3a3a3;
+  --accent: #262626;
+  --accent-foreground: #fafafa;
+  --destructive: #ef4444;
+  --destructive-foreground: #fca5a5;
+  --border: #262626;
+  --input: #262626;
+  --ring: #525252;
+  --chart-1: #8b5cf6;
+  --chart-2: #06b6d4;
+  --chart-3: #f59e0b;
+  --chart-4: #d946ef;
+  --chart-5: #f97316;
+  --sidebar: #171717;
+  --sidebar-foreground: #fafafa;
+  --sidebar-primary: #8b5cf6;
+  --sidebar-primary-foreground: #fafafa;
+  --sidebar-accent: #262626;
+  --sidebar-accent-foreground: #fafafa;
+  --sidebar-border: #262626;
+  --sidebar-ring: #525252;
+
+  /* Modern oklch colors for supported browsers */
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.145 0 0);
@@ -270,6 +340,52 @@
     .text-pretty {
       text-wrap: pretty;
       line-height: 1.4;
+    }
+  }
+
+  /* Samsung A01 specific fixes */
+  @media screen and (max-width: 576px) and (max-height: 1024px) {
+    /* Force hardware acceleration for better performance */
+    * {
+      -webkit-transform: translateZ(0);
+      transform: translateZ(0);
+      -webkit-backface-visibility: hidden;
+      backface-visibility: hidden;
+    }
+
+    /* Ensure proper box-sizing */
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+
+    /* Fix viewport issues */
+    html {
+      -webkit-text-size-adjust: 100%;
+      -ms-text-size-adjust: 100%;
+    }
+
+    /* Improve rendering on older Android browsers */
+    body {
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      text-rendering: optimizeLegibility;
+    }
+  }
+
+  /* Fallback for browsers that don't support oklch() */
+  @supports not (color: oklch(0.5 0.5 180)) {
+    :root {
+      --background: #ffffff !important;
+      --foreground: #0a0a0a !important;
+      --primary: #171717 !important;
+      --primary-foreground: #fafafa !important;
+    }
+
+    .dark {
+      --background: #0a0a0a !important;
+      --foreground: #fafafa !important;
+      --primary: #fafafa !important;
+      --primary-foreground: #171717 !important;
     }
   }
 }
