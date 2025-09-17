@@ -38,6 +38,8 @@ export function SongCarousel({ songs, selectedSong, onSongSelect, isDarkMode, is
   const [isDragging, setIsDragging] = useState(false)
   const [startX, setStartX] = useState(0)
   const [scrollLeft, setScrollLeft] = useState(0)
+  const [touchStartX, setTouchStartX] = useState(0)
+  const [touchEndX, setTouchEndX] = useState(0)
 
   useEffect(() => {
     const selectedIndex = songs.findIndex((song) => song.id === selectedSong.id)
@@ -83,21 +85,35 @@ export function SongCarousel({ songs, selectedSong, onSongSelect, isDarkMode, is
   }
 
   const handleTouchStart = (e: React.TouchEvent) => {
-    if (!scrollContainerRef.current) return
+    setTouchStartX(e.touches[0].clientX)
     setIsDragging(true)
-    setStartX(e.touches[0].pageX - scrollContainerRef.current.offsetLeft)
-    setScrollLeft(scrollContainerRef.current.scrollLeft)
   }
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    if (!isDragging || !scrollContainerRef.current) return
-    const x = e.touches[0].pageX - scrollContainerRef.current.offsetLeft
-    const walk = (x - startX) * 2
-    scrollContainerRef.current.scrollLeft = scrollLeft - walk
+    if (!isDragging) return
+    setTouchEndX(e.touches[0].clientX)
   }
 
   const handleTouchEnd = () => {
+    if (!isDragging) return
     setIsDragging(false)
+    
+    const swipeDistance = touchStartX - touchEndX
+    const minSwipeDistance = 50 // Minimum distance for a swipe
+    
+    if (Math.abs(swipeDistance) > minSwipeDistance) {
+      if (swipeDistance > 0) {
+        // Swipe left - go to next song
+        const nextIndex = (currentIndex + 1) % songs.length
+        setCurrentIndex(nextIndex)
+        onSongSelect(songs[nextIndex])
+      } else {
+        // Swipe right - go to previous song
+        const prevIndex = currentIndex === 0 ? songs.length - 1 : currentIndex - 1
+        setCurrentIndex(prevIndex)
+        onSongSelect(songs[prevIndex])
+      }
+    }
   }
 
   const getItemStyle = (index: number) => {
@@ -106,9 +122,9 @@ export function SongCarousel({ songs, selectedSong, onSongSelect, isDarkMode, is
 
     // Responsive values based on screen size
     const translateX = {
-      adjacent: isMobile ? 80 : 200,
-      second: isMobile ? 140 : 350,
-      hidden: isMobile ? 180 : 450
+      adjacent: isMobile ? 120 : 200,
+      second: isMobile ? 200 : 350,
+      hidden: isMobile ? 260 : 450
     }
     
     const scale = {
@@ -165,9 +181,15 @@ export function SongCarousel({ songs, selectedSong, onSongSelect, isDarkMode, is
 
 
   return (
-    <div className="relative h-64 sm:h-80 md:h-96 overflow-hidden">
+    <div className="relative h-80 sm:h-80 md:h-96 overflow-hidden">
       {/* 3D Carousel - Always visible, responsive */}
-      <div className="relative w-full h-full flex items-center justify-center px-2 sm:px-4" style={{ perspective: isMobile ? "800px" : "1000px" }}>
+      <div 
+        className="relative w-full h-full flex items-center justify-center px-2 sm:px-4" 
+        style={{ perspective: isMobile ? "800px" : "1000px" }}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
         {songs.map((song, index) => {
           const style = getItemStyle(index)
           const isCenter = index === currentIndex
@@ -184,7 +206,7 @@ export function SongCarousel({ songs, selectedSong, onSongSelect, isDarkMode, is
               onClick={() => handleSongClick(song, index)}
             >
               <div
-                className={`relative w-32 h-40 sm:w-40 sm:h-52 md:w-48 md:h-60 lg:w-64 lg:h-80 rounded-xl overflow-hidden shadow-2xl ${
+                className={`relative w-48 h-60 sm:w-40 sm:h-52 md:w-48 md:h-60 lg:w-64 lg:h-80 rounded-xl overflow-hidden shadow-2xl ${
                   isDarkMode ? "bg-gray-800" : "bg-white"
                 }`}
               >
@@ -193,7 +215,7 @@ export function SongCarousel({ songs, selectedSong, onSongSelect, isDarkMode, is
                   alt={`${song.title} by ${song.artist}`}
                   fill
                   className="object-cover"
-                  sizes="(max-width: 640px) 128px, (max-width: 768px) 160px, (max-width: 1024px) 192px, 256px"
+                  sizes="(max-width: 640px) 192px, (max-width: 768px) 160px, (max-width: 1024px) 192px, 256px"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
 
