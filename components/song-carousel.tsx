@@ -181,7 +181,7 @@ export function SongCarousel({ songs, selectedSong, onSongSelect, isDarkMode, is
 
 
   return (
-    <div className="relative h-80 sm:h-80 md:h-96 overflow-hidden">
+    <div className="relative h-96 sm:h-[28rem] md:h-[32rem] lg:h-[36rem] overflow-hidden">
       {/* 3D Carousel - Always visible, responsive */}
       <div 
         className="relative w-full h-full flex items-center justify-center px-2 sm:px-4" 
@@ -206,7 +206,7 @@ export function SongCarousel({ songs, selectedSong, onSongSelect, isDarkMode, is
               onClick={() => handleSongClick(song, index)}
             >
               <div
-                className={`relative w-48 h-60 sm:w-40 sm:h-52 md:w-48 md:h-60 lg:w-64 lg:h-80 rounded-xl overflow-hidden shadow-2xl ${
+                className={`relative w-48 h-72 sm:w-44 sm:h-[16.5rem] md:w-52 md:h-[19.5rem] lg:w-60 lg:h-[22.5rem] rounded-xl overflow-hidden shadow-2xl ${
                   isDarkMode ? "bg-gray-800" : "bg-white"
                 }`}
               >
@@ -214,8 +214,8 @@ export function SongCarousel({ songs, selectedSong, onSongSelect, isDarkMode, is
                   src={song.image || "/placeholder.svg"}
                   alt={`${song.title} by ${song.artist}`}
                   fill
-                  className="object-cover"
-                  sizes="(max-width: 640px) 192px, (max-width: 768px) 160px, (max-width: 1024px) 192px, 256px"
+                  className="object-contain"
+                  sizes="(max-width: 640px) 192px, (max-width: 768px) 176px, (max-width: 1024px) 208px, 240px"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
 

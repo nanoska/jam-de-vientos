@@ -101,31 +101,31 @@ export function SongDetails({ song, isDarkMode, isPlaying, onTogglePlayPause, on
       }`}
     >
       <CardHeader className="bg-gradient-to-r from-orange-500 to-orange-600 text-white">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div>
-            <CardTitle className="text-xl sm:text-2xl md:text-3xl font-bold mb-2">{song.title}</CardTitle>
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1 min-w-0">
+            <CardTitle className="text-xl sm:text-2xl md:text-3xl font-bold mb-2 pr-2">{song.title}</CardTitle>
             <p className="text-lg sm:text-xl text-orange-100">{song.artist}</p>
           </div>
           {hasAudio && (
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-shrink-0">
               <Button
                 onClick={onRestart}
                 size="sm"
                 variant="secondary"
-                className="w-10 h-10 p-0 bg-white/20 hover:bg-white/30 text-white border-white/30"
+                className="w-9 h-9 sm:w-10 sm:h-10 p-0 bg-white/20 hover:bg-white/30 text-white border-white/30"
               >
-                <SkipBackIcon className="w-4 h-4" />
+                <SkipBackIcon className="w-3 h-3 sm:w-4 sm:h-4" />
               </Button>
               <Button
                 onClick={onTogglePlayPause}
                 size="sm"
                 variant="secondary"
-                className="w-10 h-10 p-0 bg-white/20 hover:bg-white/30 text-white border-white/30"
+                className="w-9 h-9 sm:w-10 sm:h-10 p-0 bg-white/20 hover:bg-white/30 text-white border-white/30"
               >
                 {isPlaying ? (
-                  <PauseIcon className="w-4 h-4" />
+                  <PauseIcon className="w-3 h-3 sm:w-4 sm:h-4" />
                 ) : (
-                  <PlayIcon className="w-4 h-4" />
+                  <PlayIcon className="w-3 h-3 sm:w-4 sm:h-4" />
                 )}
               </Button>
             </div>
@@ -205,8 +205,7 @@ export function SongDetails({ song, isDarkMode, isPlaying, onTogglePlayPause, on
           ) : (
             <div className="mb-4 p-3 rounded-lg bg-yellow-50 border border-yellow-200">
               <p className="text-sm text-yellow-800 font-medium">
-                No hay archivos subidos para este tema. Los administradores pueden subir archivos desde el panel de
-                administración.
+                No hay archivos subidos para este tema.
               </p>
             </div>
           )}
@@ -215,7 +214,7 @@ export function SongDetails({ song, isDarkMode, isPlaying, onTogglePlayPause, on
             <p className={`font-medium mb-3 ${isDarkMode ? "text-gray-300" : "text-gray-700"}`}>
               Selecciona tu instrumento:
             </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="flex flex-wrap gap-2">
               {getAvailableInstruments().map((instrument) => {
                 const isSelected = selectedInstrument === instrument.id
                 const isAvailable = instrument.isAvailable
@@ -226,22 +225,21 @@ export function SongDetails({ song, isDarkMode, isPlaying, onTogglePlayPause, on
                     onClick={() => isAvailable && setSelectedInstrument(instrument.id)}
                     disabled={!isAvailable}
                     className={cn(
-                      "p-3 rounded-lg border-2 text-left transition-all duration-200",
-                      isSelected
-                        ? "border-orange-500 bg-orange-50 text-orange-800"
+                      "px-3 py-2 rounded-lg border transition-all duration-200 text-sm",
+                      isSelected && isAvailable
+                        ? "border-blue-500 bg-blue-500 text-white shadow-md"
                         : isAvailable
                           ? isDarkMode
-                            ? "border-green-400 hover:border-green-300 text-green-300 bg-green-900/20"
-                            : "border-green-400 hover:border-green-500 text-green-700 bg-green-50"
+                            ? "border-gray-600 hover:border-blue-400 text-gray-300 bg-gray-800 hover:bg-gray-700"
+                            : "border-gray-300 hover:border-blue-400 text-gray-700 bg-white hover:bg-blue-50"
                           : isDarkMode
-                            ? "border-gray-600 text-gray-500 bg-gray-800/50 cursor-not-allowed opacity-50"
-                            : "border-gray-300 text-gray-400 bg-gray-100 cursor-not-allowed opacity-50",
+                            ? "border-gray-700 text-gray-600 bg-gray-800/30 cursor-not-allowed opacity-50"
+                            : "border-gray-200 text-gray-400 bg-gray-50 cursor-not-allowed opacity-50",
                     )}
                   >
-                    <div className="font-medium text-sm sm:text-base">{instrument.label}</div>
-                    <div className="text-xs sm:text-sm opacity-75">Afinación: {instrument.transposition}</div>
-                    {!isAvailable && (
-                      <div className="text-xs mt-1 font-medium text-red-500">No disponible</div>
+                    <div className="font-medium">{instrument.id}</div>
+                    {isAvailable && (
+                      <div className="text-xs opacity-75 mt-0.5">{instrument.transposition}</div>
                     )}
                   </button>
                 )
@@ -251,18 +249,18 @@ export function SongDetails({ song, isDarkMode, isPlaying, onTogglePlayPause, on
 
           <div className="mb-4 sm:mb-6">
             <p className={`font-medium mb-3 ${isDarkMode ? "text-gray-300" : "text-gray-700"}`}>Selecciona la parte:</p>
-            <div className="flex flex-col sm:flex-row flex-wrap gap-3">
+            <div className="flex flex-wrap gap-2">
               {partOptions.map((part) => (
                 <button
                   key={part.id}
                   onClick={() => setSelectedPart(part.id)}
                   className={cn(
-                    "px-4 py-2 rounded-full border-2 transition-all duration-200 text-sm sm:text-base",
+                    "px-3 py-2 rounded-lg border transition-all duration-200 text-sm",
                     selectedPart === part.id
-                      ? "border-orange-500 bg-orange-500 text-white"
+                      ? "border-blue-500 bg-blue-500 text-white shadow-md"
                       : isDarkMode
-                        ? "border-gray-600 hover:border-gray-500 text-gray-300"
-                        : "border-gray-300 hover:border-gray-400 text-gray-700",
+                        ? "border-gray-600 hover:border-blue-400 text-gray-300 bg-gray-800 hover:bg-gray-700"
+                        : "border-gray-300 hover:border-blue-400 text-gray-700 bg-white hover:bg-blue-50",
                   )}
                 >
                   {part.label}
@@ -277,7 +275,7 @@ export function SongDetails({ song, isDarkMode, isPlaying, onTogglePlayPause, on
             className={cn(
               "w-full sm:w-auto",
               isDownloadAvailable(selectedInstrument, selectedPart)
-                ? "bg-orange-500 hover:bg-orange-600 text-white"
+                ? "bg-blue-600 hover:bg-blue-700 text-white shadow-lg"
                 : "bg-gray-400 cursor-not-allowed text-gray-200",
             )}
             disabled={!isDownloadAvailable(selectedInstrument, selectedPart)}

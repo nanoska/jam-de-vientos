@@ -168,57 +168,99 @@ export default function JamDeVientosPage() {
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div
             className="musical-element text-lg sm:text-2xl text-white/30"
-            style={{ left: "10%", animationDelay: "0s" }}
+            style={{ left: "5%", animationDelay: "0s" }}
           >
             ♪
           </div>
           <div
+            className="musical-element text-xl sm:text-3xl text-white/25"
+            style={{ left: "15%", animationDelay: "1s" }}
+          >
+            🎺
+          </div>
+          <div
             className="musical-element text-base sm:text-xl text-white/20"
-            style={{ left: "25%", animationDelay: "1s" }}
+            style={{ left: "25%", animationDelay: "2s" }}
           >
             𝄞
           </div>
           <div
             className="musical-element text-xl sm:text-3xl text-white/25"
-            style={{ left: "40%", animationDelay: "2s" }}
+            style={{ left: "35%", animationDelay: "3s" }}
           >
-            🎺
+            🎷
+          </div>
+          <div
+            className="musical-element text-xl sm:text-3xl text-white/25"
+            style={{ left: "45%", animationDelay: "0.5s" }}
+          >
+            🥁
           </div>
           <div
             className="musical-element text-lg sm:text-2xl text-white/30"
-            style={{ left: "55%", animationDelay: "3s" }}
+            style={{ left: "55%", animationDelay: "1.5s" }}
           >
             ♭
           </div>
           <div
             className="musical-element text-xl sm:text-3xl text-white/25"
-            style={{ left: "70%", animationDelay: "0.5s" }}
+            style={{ left: "65%", animationDelay: "2.5s" }}
           >
-            🎷
+            📢
+          </div>
+          <div
+            className="musical-element text-xl sm:text-3xl text-white/25"
+            style={{ left: "75%", animationDelay: "3.5s" }}
+          >
+            🎺
           </div>
           <div
             className="musical-element text-lg sm:text-2xl text-white/30"
-            style={{ left: "85%", animationDelay: "1.5s" }}
+            style={{ left: "85%", animationDelay: "4s" }}
           >
             ♯
           </div>
           <div
+            className="musical-element text-xl sm:text-3xl text-white/25"
+            style={{ left: "95%", animationDelay: "4.5s" }}
+          >
+            🎷
+          </div>
+          <div
             className="musical-element text-base sm:text-xl text-white/20 hidden sm:block"
-            style={{ left: "20%", animationDelay: "4s" }}
+            style={{ left: "12%", animationDelay: "5s" }}
           >
             𝄢
           </div>
           <div
             className="musical-element text-lg sm:text-2xl text-white/30 hidden sm:block"
-            style={{ left: "60%", animationDelay: "2.5s" }}
+            style={{ left: "28%", animationDelay: "5.5s" }}
           >
             ♫
           </div>
           <div
+            className="musical-element text-xl sm:text-3xl text-white/25 hidden sm:block"
+            style={{ left: "42%", animationDelay: "6s" }}
+          >
+            🥁
+          </div>
+          <div
+            className="musical-element text-xl sm:text-3xl text-white/25 hidden sm:block"
+            style={{ left: "58%", animationDelay: "6.5s" }}
+          >
+            📢
+          </div>
+          <div
             className="musical-element text-base sm:text-xl text-white/20 hidden sm:block"
-            style={{ left: "80%", animationDelay: "3.5s" }}
+            style={{ left: "72%", animationDelay: "7s" }}
           >
             𝄪
+          </div>
+          <div
+            className="musical-element text-lg sm:text-2xl text-white/30 hidden sm:block"
+            style={{ left: "88%", animationDelay: "7.5s" }}
+          >
+            ♬
           </div>
         </div>
 
