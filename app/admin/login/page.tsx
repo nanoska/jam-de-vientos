@@ -10,7 +10,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Music, Lock, Mail } from "lucide-react"
+import { Music, Lock, Mail, ArrowLeft } from "lucide-react"
+import Link from "next/link"
 
 export default function AdminLoginPage() {
   const [email, setEmail] = useState("")
@@ -62,6 +63,19 @@ export default function AdminLoginPage() {
         </CardHeader>
 
         <CardContent>
+          <div className="mb-4">
+            <Link href="/">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="flex items-center space-x-2 text-gray-600 hover:text-gray-800"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                <span>Volver al sitio</span>
+              </Button>
+            </Link>
+          </div>
+          
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email" className="text-gray-700 font-medium">
