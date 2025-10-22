@@ -105,7 +105,12 @@ jam-de-vientos/
 
 ### Local Development
 
+All development commands should be run from the `/frontend` directory:
+
 ```bash
+# Navigate to frontend
+cd frontend
+
 # Install dependencies
 npm install
 
@@ -144,10 +149,11 @@ docker compose down -v
 ```
 
 The Docker setup:
+- Builds from the `/frontend` directory
 - Exposes the app on port **3001** (mapped from container port 3000)
 - Connects to the external `sheetmusic_sheetmusic-network` Docker network
 - Requires the SheetMusic API to be running separately
-- Uses volume mounts for live code reloading
+- Uses volume mounts for live code reloading (`./frontend:/app`)
 
 ### TypeScript
 
