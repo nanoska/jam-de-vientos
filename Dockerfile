@@ -18,5 +18,8 @@ COPY frontend/ ./
 # Expose port
 EXPOSE 3000
 
+# Set environment variable for Next.js to listen on all interfaces
+ENV HOSTNAME="0.0.0.0"
+
 # Start development server
 CMD ["npm", "run", "dev"]
