@@ -8,7 +8,6 @@ services:
     volumes:
       - ./frontend:/app
       - /app/node_modules
-      - /app/.next
     environment:
       - NEXT_PUBLIC_SHEETMUSIC_API_URL=http://host.docker.internal:8000
     extra_hosts:
