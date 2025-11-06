@@ -10,11 +10,6 @@ services:
       - /app/node_modules
       - /app/.next
     environment:
-      - NEXT_PUBLIC_SHEETMUSIC_API_URL=http://localhost:8000
-    networks:
-      - sheetmusic_sheetmusic-network
-
-# Connect to SheetMusic network
-networks:
-  sheetmusic_sheetmusic-network:
-    external: true
+      - NEXT_PUBLIC_SHEETMUSIC_API_URL=http://host.docker.internal:8000
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
