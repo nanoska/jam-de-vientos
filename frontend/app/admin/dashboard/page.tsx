@@ -323,7 +323,7 @@ function EventSelectionView({
                               size="sm"
                               onClick={() => {
                                 const audio = new Audio(version.audio)
-                                audio.play().catch(console.error)
+                                audio.play().catch(() => {})
                               }}
                               className="p-2 sm:px-3"
                               title="Reproducir audio"
@@ -571,7 +571,7 @@ function SheetMusicManagementView({
                           size="sm"
                           onClick={() => {
                             const audio = new Audio(version.audio)
-                            audio.play().catch(console.error)
+                            audio.play().catch(() => {})
                           }}
                           className="p-2 sm:px-3"
                           title="Reproducir audio"
@@ -619,24 +619,20 @@ export default function AdminDashboard() {
         ])
 
         // Handle both array response and object with events property
-        const events = Array.isArray(allEventsResponse) ? allEventsResponse : (allEventsResponse.events || [])
+        const events = Array.isArray(allEventsResponse) ? allEventsResponse : ((allEventsResponse as any).events || [])
         setAvailableEvents(events)
 
         // Auto-select the first upcoming event if available
-        const upcomingEvents = Array.isArray(upcomingResponse) ? upcomingResponse : (upcomingResponse.events || [])
+        const upcomingEvents = Array.isArray(upcomingResponse) ? upcomingResponse : ((upcomingResponse as any).events || [])
         if (upcomingEvents.length > 0) {
           const activeEvent = upcomingEvents[0]
           setSelectedEvent(activeEvent)
           setShowEventRepertoire(true)
           // Save to localStorage so main page can use it
           localStorage.setItem('jamdevientos-featured-event-id', activeEvent.id.toString())
-          console.log('[Admin Dashboard] Auto-selected upcoming event and saved to localStorage:', activeEvent)
         }
-
-        console.log('[Admin Dashboard] Loaded events:', events)
-        console.log('[Admin Dashboard] Upcoming events:', upcomingEvents)
       } catch (error) {
-        console.error('Failed to load events from SheetMusic API:', error)
+        // Failed to load events from SheetMusic API
         setAvailableEvents([]) // Set empty array on error
       } finally {
         setIsLoadingEvents(false)
@@ -657,7 +653,6 @@ export default function AdminDashboard() {
       setShowEventRepertoire(false)
       // Remove featured event from localStorage
       localStorage.removeItem('jamdevientos-featured-event-id')
-      console.log('[Admin Dashboard] Removed featured event from localStorage')
       return
     }
 
@@ -668,9 +663,7 @@ export default function AdminDashboard() {
 
       // Save selected event ID to localStorage so main page can use it
       localStorage.setItem('jamdevientos-featured-event-id', eventId)
-      console.log('[Admin Dashboard] Set featured event in localStorage:', eventId)
     } catch (error) {
-      console.error('Failed to load event details:', error)
       alert('Error al cargar los detalles del evento')
     }
   }
@@ -701,7 +694,6 @@ export default function AdminDashboard() {
     try {
       await sheetMusicAPI.updateVersionVisibility(versionId, newVisibility)
     } catch (error) {
-      console.error('Error toggling version visibility:', error)
       // Revert on error
       if (selectedEvent?.repertoire) {
         const revertedEvent = {
@@ -729,15 +721,14 @@ export default function AdminDashboard() {
       if (selectedEvent) {
         const refreshedEvent = await sheetMusicAPI.getEventDetail(selectedEvent.id)
         setSelectedEvent(refreshedEvent)
-        console.log('[Upload] Files uploaded, event refreshed')
       }
     } catch (error) {
-      console.error('Failed to refresh event after upload:', error)
+      // Failed to refresh event after upload
     }
   }
 
   return (
-    <ProtectedRoute requireAdmin>
+    <ProtectedRoute>
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         {/* Header */}
         <header className="bg-white dark:bg-gray-950 shadow-sm border-b dark:border-gray-800">

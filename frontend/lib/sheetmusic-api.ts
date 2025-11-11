@@ -30,6 +30,7 @@ export interface SheetMusicLocation {
 export interface SheetMusicEvent {
   id: number
   title: string
+  slug?: string
   event_type: 'CONCERT' | 'REHEARSAL' | 'RECORDING' | 'WORKSHOP' | 'OTHER'
   status: 'DRAFT' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED'
   description?: string
@@ -41,6 +42,8 @@ export interface SheetMusicEvent {
   repertoire?: SheetMusicRepertoire
   is_public: boolean
   price?: string
+  is_upcoming?: boolean
+  is_ongoing?: boolean
 }
 
 export interface CarouselResponse {
@@ -118,6 +121,14 @@ export class SheetMusicAPI {
    */
   async getEventDetail(eventId: number): Promise<SheetMusicEvent> {
     const url = `${this.baseURL}/api/v1/events/jamdevientos/${eventId}/`
+    return this.fetchWithErrorHandling(url)
+  }
+
+  /**
+   * Get event by slug
+   */
+  async getEventBySlug(slug: string): Promise<SheetMusicEvent> {
+    const url = `${this.baseURL}/api/v1/events/jamdevientos/by-slug/?slug=${encodeURIComponent(slug)}`
     return this.fetchWithErrorHandling(url)
   }
 

@@ -289,3 +289,111 @@ The project enforces strict TypeScript and ESLint rules:
 - Console logs removed in production builds
 
 Always fix type errors and lint warnings before committing.
+
+---
+
+## Roadmap v2.0
+
+### Visión Futura: Plataforma Multi-Evento con Lector Avanzado
+
+Jam de Vientos tiene un roadmap ambicioso para convertirse en una **plataforma completa** para músicos y público. La documentación completa está disponible en:
+
+📚 **[Roadmap Completo v2.0](../sessions/proxima/roadmap-jam-vientos-v2.md)**
+
+### Nuevas Features Planificadas
+
+#### 1. Multi-Evento con URLs Dinámicas
+Transformar de sitio de evento único a plataforma multi-evento:
+- **URLs SEO-friendly**: `jamdevientos.com/concierto-primavera-2025`
+- **Portada institucional** con hero section y calendario
+- **Galería de eventos** pasados con fotos
+- **Sección "Sobre Nosotros"**
+
+#### 2. Lector de Partituras Avanzado
+Herramienta profesional para músicos:
+- **Visor PDF** optimizado para móvil (react-pdf + PDF.js)
+- **Control de tempo** (0.5x - 2.0x) preservando pitch
+- **Metrónomo integrado** con beat visual
+- **Scrolling automático** sincronizado con audio
+- **Modo performance** (fullscreen, wake lock, no-sleep)
+
+#### 3. Stack Tecnológico Adicional
+```json
+{
+  // Multi-evento
+  "@fullcalendar/react": "^6.1.0",
+  "photoswipe": "^5.4.0",
+  "framer-motion": "^10.16.0",
+
+  // Lector de partituras
+  "react-pdf": "^7.7.0",
+  "pdfjs-dist": "^3.11.0",
+  "zustand": "^4.5.0"
+}
+```
+
+### Arquitectura Planificada
+
+#### Estructura de Rutas v2.0
+```
+app/
+├── page.tsx                              # Portada con hero + calendario
+├── eventos/page.tsx                      # Lista/calendario de eventos
+├── sobre-nosotros/page.tsx              # Info institucional
+├── galeria/page.tsx                     # Galería de fotos
+├── [eventSlug]/
+│   ├── page.tsx                         # Evento con carousel
+│   └── partituras/
+│       └── [versionId]/
+│           └── page.tsx                 # Lector de partituras
+```
+
+#### Nuevos Endpoints API (Sheet-API)
+```python
+# Slugs
+GET  /api/v1/events/jamdevientos/by-slug/?slug={slug}
+
+# Galería
+GET  /api/v1/events/photos/?event={id}&year={year}
+
+# Page timestamps para auto-scroll
+# Nuevo campo en modelo Version: page_timestamps (JSONField)
+```
+
+### Timeline Estimado
+
+| Fase | Duración | Entregable |
+|------|----------|------------|
+| **FASE 9**: Multi-Evento + Portada | 8-12h | Sitio multi-evento funcional |
+| **FASE 10**: Lector Partituras | 12-16h | Herramienta profesional para músicos |
+| **Total v2.0** | **20-28h** | Plataforma completa |
+
+### Implementación
+
+Cuando se decida implementar v2.0:
+
+1. **Leer documentación completa** en `sessions/proxima/roadmap-jam-vientos-v2.md`
+2. **Backend primero**: Agregar campo `slug` y modelo `EventPhoto` en Sheet-API
+3. **Frontend multi-evento**: Implementar routing dinámico y portada
+4. **Lector de partituras**: Seguir especificaciones técnicas detalladas
+5. **Testing en móviles**: iOS Safari y Android Chrome
+
+### Principios de Diseño v2.0
+
+- **Mobile-first**: Optimizado principalmente para músicos en ensayos
+- **Performance**: Lazy loading, code splitting, service workers
+- **Accesibilidad**: ARIA labels, keyboard navigation, WCAG AA
+- **Reutilización**: Maximizar uso de librerías existentes (PDF.js, FullCalendar)
+- **APIs nativas**: Preferir Web APIs (Web Audio, Wake Lock) sobre librerías
+
+### Referencias
+
+- [Roadmap Completo v2.0](../sessions/proxima/roadmap-jam-vientos-v2.md) - Especificaciones técnicas detalladas
+- [Plan de Producción](../sessions/proxima/plan-produccion.md) - Fases 1-10
+- [PDF.js Documentation](https://mozilla.github.io/pdf.js/)
+- [Web Audio API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API)
+- [FullCalendar React](https://fullcalendar.io/docs/react)
+
+---
+
+**Nota**: El código actual está en v1.0 (evento único con carousel). Las features de v2.0 se implementarán post-producción según el roadmap documentado.

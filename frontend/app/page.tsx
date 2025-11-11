@@ -81,10 +81,8 @@ export default function JamDeVientosPage() {
         const featuredEventId = localStorage.getItem('jamdevientos-featured-event-id')
         if (featuredEventId) {
           try {
-            console.log(`[Frontend] Loading featured event from dashboard: ${featuredEventId}`)
             eventToLoad = await sheetMusicAPI.getEventDetail(parseInt(featuredEventId))
           } catch (error) {
-            console.warn(`[Frontend] Failed to load featured event ${featuredEventId}, falling back to upcoming events:`, error)
             // Remove invalid featured event ID
             localStorage.removeItem('jamdevientos-featured-event-id')
           }
@@ -95,7 +93,6 @@ export default function JamDeVientosPage() {
           const upcomingEventsResponse = await sheetMusicAPI.getUpcomingEvents()
           if (upcomingEventsResponse.events && upcomingEventsResponse.events.length > 0) {
             eventToLoad = upcomingEventsResponse.events[0]
-            console.log(`[Frontend] Loading first upcoming event: ${eventToLoad.title}`)
           }
         }
 
@@ -127,14 +124,11 @@ export default function JamDeVientosPage() {
                 : undefined
             })
 
-            const sourceText = featuredEventId ? 'featured event from dashboard' : 'upcoming event'
-            console.log(`[Frontend] Loaded ${visibleVersions.length} songs from SheetMusic API ${sourceText}: ${eventToLoad.title}`)
             return // Exit early, we have data from SheetMusic API
           }
         }
 
         // No fallback themes available - SheetMusic API is the primary data source
-        console.log('[Frontend] No events available from SheetMusic API')
         setThemes([])
         setSongs([])
         setSelectedSong(null)
@@ -142,7 +136,7 @@ export default function JamDeVientosPage() {
         setEventInfo(null)
 
       } catch (error) {
-        console.error("Error loading data:", error)
+        // Error loading data from API
 
         // Show error state - no local fallback available
         setThemes([])
@@ -158,7 +152,6 @@ export default function JamDeVientosPage() {
     // Listen for changes to the featured event in localStorage
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'jamdevientos-featured-event-id') {
-        console.log('[Frontend] Featured event changed in localStorage, reloading data')
         loadData()
       }
     }
@@ -200,8 +193,7 @@ export default function JamDeVientosPage() {
       newAudio.addEventListener('loadeddata', () => {
         newAudio.play().then(() => {
           setIsPlaying(true)
-        }).catch((error) => {
-          console.log("Audio autoplay prevented:", error)
+        }).catch(() => {
           setIsPlaying(false)
         })
       })
@@ -218,8 +210,8 @@ export default function JamDeVientosPage() {
       } else {
         currentAudio.play().then(() => {
           setIsPlaying(true)
-        }).catch((error) => {
-          console.log("Audio play error:", error)
+        }).catch(() => {
+          // Audio play failed
         })
       }
     }
@@ -231,8 +223,8 @@ export default function JamDeVientosPage() {
       if (!isPlaying) {
         currentAudio.play().then(() => {
           setIsPlaying(true)
-        }).catch((error) => {
-          console.log("Audio play error:", error)
+        }).catch(() => {
+          // Audio play failed
         })
       }
     }
