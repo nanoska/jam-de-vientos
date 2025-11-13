@@ -735,7 +735,7 @@ export default function AdminDashboard() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center h-16">
               {/* Left: Logo and Title */}
-              <div className="flex items-center space-x-3 flex-shrink-0">
+              <div className="flex items-center space-x-2 sm:space-x-3 flex-shrink-0">
                 <div className="w-8 h-8 bg-gradient-to-r from-orange-500 to-orange-600 rounded-lg flex items-center justify-center">
                   <Music className="w-5 h-5 text-white" />
                 </div>
@@ -744,34 +744,41 @@ export default function AdminDashboard() {
                   <p className="text-sm text-gray-500 dark:text-gray-400">Jam de Vientos</p>
                 </div>
                 <div className="sm:hidden">
-                  <h1 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Admin</h1>
+                  <h1 className="text-base font-semibold text-gray-900 dark:text-gray-100">Jam de Vientos</h1>
                 </div>
               </div>
 
-              {/* Center: Navigation Menu (Desktop only) */}
-              <div className="hidden md:flex items-center space-x-1 border dark:border-gray-700 rounded-lg p-1 bg-gray-50 dark:bg-gray-800">
+              {/* Center: Navigation Menu */}
+              <div className="flex items-center space-x-1 border dark:border-gray-700 rounded-lg p-1 bg-gray-50 dark:bg-gray-800">
                 <Button
                   variant={currentView === 'event-selection' ? "default" : "ghost"}
                   size="sm"
                   onClick={() => setCurrentView('event-selection')}
-                  className="flex items-center gap-1 px-3"
+                  className="flex items-center gap-1 px-2 sm:px-3"
+                  title="Eventos"
                 >
                   <CalendarIcon className="w-4 h-4" />
-                  <span>Eventos</span>
+                  <span className="hidden sm:inline">Eventos</span>
                 </Button>
                 <Button
                   variant={currentView === 'sheet-music-management' ? "default" : "ghost"}
                   size="sm"
                   onClick={() => setCurrentView('sheet-music-management')}
-                  className="flex items-center gap-1 px-3"
+                  className="flex items-center gap-1 px-2 sm:px-3"
+                  title="Partituras"
                 >
                   <FileText className="w-4 h-4" />
-                  <span>Partituras</span>
+                  <span className="hidden sm:inline">Partituras</span>
                 </Button>
               </div>
 
               {/* Right: Actions */}
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-1 sm:space-x-2">
+                {/* Theme toggle - always visible */}
+                <div className="md:hidden">
+                  <ThemeToggle />
+                </div>
+
                 {/* Mobile menu button */}
                 <button
                   onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -809,40 +816,6 @@ export default function AdminDashboard() {
             {/* Mobile menu */}
             {isMobileMenuOpen && (
               <div className="md:hidden border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 py-3 space-y-2">
-                {/* Navigation tabs for mobile */}
-                <div className="px-3 pb-3 border-b border-gray-200 dark:border-gray-800">
-                  <div className="flex items-center space-x-1 border dark:border-gray-700 rounded-lg p-1 bg-gray-50 dark:bg-gray-800">
-                    <Button
-                      variant={currentView === 'event-selection' ? "default" : "ghost"}
-                      size="sm"
-                      onClick={() => {
-                        setCurrentView('event-selection')
-                        setIsMobileMenuOpen(false)
-                      }}
-                      className="flex-1 flex items-center justify-center gap-1 px-3"
-                    >
-                      <CalendarIcon className="w-4 h-4" />
-                      <span>Eventos</span>
-                    </Button>
-                    <Button
-                      variant={currentView === 'sheet-music-management' ? "default" : "ghost"}
-                      size="sm"
-                      onClick={() => {
-                        setCurrentView('sheet-music-management')
-                        setIsMobileMenuOpen(false)
-                      }}
-                      className="flex-1 flex items-center justify-center gap-1 px-3"
-                    >
-                      <FileText className="w-4 h-4" />
-                      <span>Partituras</span>
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="px-3">
-                  <ThemeToggle />
-                </div>
-
                 <Link href="/" className="block px-3">
                   <Button variant="outline" size="sm" className="w-full justify-start bg-transparent">
                     <Home className="w-4 h-4 mr-2" />
