@@ -734,22 +734,92 @@ export default function AdminDashboard() {
         <header className="bg-white dark:bg-gray-950 shadow-sm border-b dark:border-gray-800">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center h-16">
-              <div className="flex items-center space-x-4">
+              {/* Left: Logo and Title */}
+              <div className="flex items-center space-x-3 flex-shrink-0">
                 <div className="w-8 h-8 bg-gradient-to-r from-orange-500 to-orange-600 rounded-lg flex items-center justify-center">
                   <Music className="w-5 h-5 text-white" />
                 </div>
-                <div>
+                <div className="hidden sm:block">
                   <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Admin Dashboard</h1>
                   <p className="text-sm text-gray-500 dark:text-gray-400">Jam de Vientos</p>
                 </div>
-                <div className="ml-auto flex items-center space-x-2">
-                  {/* Navigation Menu */}
+                <div className="sm:hidden">
+                  <h1 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Admin</h1>
+                </div>
+              </div>
+
+              {/* Center: Navigation Menu (Desktop only) */}
+              <div className="hidden md:flex items-center space-x-1 border dark:border-gray-700 rounded-lg p-1 bg-gray-50 dark:bg-gray-800">
+                <Button
+                  variant={currentView === 'event-selection' ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setCurrentView('event-selection')}
+                  className="flex items-center gap-1 px-3"
+                >
+                  <CalendarIcon className="w-4 h-4" />
+                  <span>Eventos</span>
+                </Button>
+                <Button
+                  variant={currentView === 'sheet-music-management' ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setCurrentView('sheet-music-management')}
+                  className="flex items-center gap-1 px-3"
+                >
+                  <FileText className="w-4 h-4" />
+                  <span>Partituras</span>
+                </Button>
+              </div>
+
+              {/* Right: Actions */}
+              <div className="flex items-center space-x-2">
+                {/* Mobile menu button */}
+                <button
+                  onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                  className="md:hidden p-2 rounded-md text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800"
+                >
+                  <Menu className="w-5 h-5" />
+                </button>
+
+                {/* Desktop actions */}
+                <div className="hidden md:flex items-center space-x-2 lg:space-x-3">
+                  <ThemeToggle />
+
+                  <Link href="/">
+                    <Button variant="outline" size="sm" className="flex items-center space-x-1 lg:space-x-2 bg-transparent">
+                      <Home className="w-4 h-4" />
+                      <span className="hidden lg:inline">Ver Sitio</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </Button>
+                  </Link>
+
+                  <span className="hidden xl:inline text-sm text-gray-600 dark:text-gray-300">Bienvenido, {user?.email}</span>
+                  <Button
+                    onClick={handleLogout}
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center space-x-1 lg:space-x-2 bg-transparent"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    <span className="hidden lg:inline">Salir</span>
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            {/* Mobile menu */}
+            {isMobileMenuOpen && (
+              <div className="md:hidden border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 py-3 space-y-2">
+                {/* Navigation tabs for mobile */}
+                <div className="px-3 pb-3 border-b border-gray-200 dark:border-gray-800">
                   <div className="flex items-center space-x-1 border dark:border-gray-700 rounded-lg p-1 bg-gray-50 dark:bg-gray-800">
                     <Button
                       variant={currentView === 'event-selection' ? "default" : "ghost"}
                       size="sm"
-                      onClick={() => setCurrentView('event-selection')}
-                      className="flex items-center gap-1 px-3"
+                      onClick={() => {
+                        setCurrentView('event-selection')
+                        setIsMobileMenuOpen(false)
+                      }}
+                      className="flex-1 flex items-center justify-center gap-1 px-3"
                     >
                       <CalendarIcon className="w-4 h-4" />
                       <span>Eventos</span>
@@ -757,71 +827,42 @@ export default function AdminDashboard() {
                     <Button
                       variant={currentView === 'sheet-music-management' ? "default" : "ghost"}
                       size="sm"
-                      onClick={() => setCurrentView('sheet-music-management')}
-                      className="flex items-center gap-1 px-3"
+                      onClick={() => {
+                        setCurrentView('sheet-music-management')
+                        setIsMobileMenuOpen(false)
+                      }}
+                      className="flex-1 flex items-center justify-center gap-1 px-3"
                     >
                       <FileText className="w-4 h-4" />
                       <span>Partituras</span>
                     </Button>
                   </div>
                 </div>
-              </div>
 
-              <div className="flex items-center">
-                <button
-                  onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                  className="sm:hidden p-2 rounded-md text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800"
-                >
-                  <Menu className="w-5 h-5" />
-                </button>
-
-                <div className="hidden sm:flex items-center space-x-2 md:space-x-4">
-                  <ThemeToggle />
-
-                  <Link href="/">
-                    <Button variant="outline" size="sm" className="flex items-center space-x-2 bg-transparent">
-                      <Home className="w-4 h-4" />
-                      <span>Ver Sitio</span>
-                      <ExternalLink className="w-3 h-3" />
-                    </Button>
-                  </Link>
-
-                  <span className="text-sm text-gray-600 dark:text-gray-300">Bienvenido, {user?.email}</span>
-                  <Button
-                    onClick={handleLogout}
-                    variant="outline"
-                    size="sm"
-                    className="flex items-center space-x-2 bg-transparent"
-                  >
-                    <LogOut className="w-4 h-4" />
-                    <span>Salir</span>
-                  </Button>
-                </div>
-              </div>
-            </div>
-
-            {isMobileMenuOpen && (
-              <div className="sm:hidden border-t bg-white dark:bg-gray-950 py-3 space-y-2">
                 <div className="px-3">
                   <ThemeToggle />
                 </div>
 
-                <Link href="/" className="block">
+                <Link href="/" className="block px-3">
                   <Button variant="outline" size="sm" className="w-full justify-start bg-transparent">
                     <Home className="w-4 h-4 mr-2" />
                     Ver Sitio
                   </Button>
                 </Link>
+
                 <div className="px-3 py-2 text-sm text-gray-600 dark:text-gray-300">Bienvenido, {user?.email}</div>
-                <Button
-                  onClick={handleLogout}
-                  variant="outline"
-                  size="sm"
-                  className="w-full justify-start bg-transparent"
-                >
-                  <LogOut className="w-4 h-4 mr-2" />
-                  Cerrar Sesión
-                </Button>
+
+                <div className="px-3">
+                  <Button
+                    onClick={handleLogout}
+                    variant="outline"
+                    size="sm"
+                    className="w-full justify-start bg-transparent"
+                  >
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Cerrar Sesión
+                  </Button>
+                </div>
               </div>
             )}
           </div>
