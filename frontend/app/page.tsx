@@ -6,6 +6,7 @@ import { SongDetails } from "@/components/song-details"
 import { useAuth } from "@/contexts/auth-context"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
+import { useTheme } from "next-themes"
 // Legacy Django themes interface - will be removed when fully migrated to SheetMusic API
 interface Theme {
   id: string
@@ -62,7 +63,6 @@ export default function JamDeVientosPage() {
   const [themes, setThemes] = useState<Theme[]>([])
   const [songs, setSongs] = useState<Song[]>([])
   const [selectedSong, setSelectedSong] = useState<Song | null>(null)
-  const [isDarkMode, setIsDarkMode] = useState(false)
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
   // SheetMusic API integration state
@@ -71,6 +71,10 @@ export default function JamDeVientosPage() {
   const [eventInfo, setEventInfo] = useState<{ title: string; date: string; location: string; locationUrl?: string } | null>(null)
 
   const { user, isAuthenticated } = useAuth()
+  const { theme, setTheme } = useTheme()
+
+  // Determine if dark mode is active
+  const isDarkMode = theme === 'dark'
 
   useEffect(() => {
     const loadData = async () => {
@@ -166,7 +170,7 @@ export default function JamDeVientosPage() {
   }, [])
 
   const toggleDarkMode = () => {
-    setIsDarkMode(!isDarkMode)
+    setTheme(isDarkMode ? 'light' : 'dark')
   }
 
   const [isPlaying, setIsPlaying] = useState(false)
