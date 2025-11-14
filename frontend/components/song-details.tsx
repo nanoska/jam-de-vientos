@@ -1,22 +1,12 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
-// Legacy file type - will be removed when fully migrated to SheetMusic API
-interface UploadedFile {
-  id: string
-  name: string
-  type: "pdf" | "image" | "audio"
-  url: string
-  scoreType?: string
-  tuning?: string
-  part?: string
-  themeId: string
-}
 import { PlayIcon, PauseIcon, DownloadIcon, MusicIcon, ClockIcon, KeyIcon, SkipBackIcon } from "@/components/icons"
+import type { SheetMusicFiles } from "@/lib/sheetmusic-api"
 
 interface Song {
   id: number
@@ -28,6 +18,7 @@ interface Song {
   structure: string
   description: string
   audioUrl?: string
+  sheet_music_files?: SheetMusicFiles
 }
 
 interface SongDetailsProps {
@@ -43,64 +34,66 @@ const instrumentOptions = [
   { id: "Eb", label: "Eb (Alto Sax, Barítono)", transposition: "Eb" },
   { id: "C", label: "C (Flauta, Oboe)", transposition: "C" },
   { id: "F", label: "F (Corno)", transposition: "F" },
-  { id: "Clave de Fa", label: "Clave de Fa (Trombón, Tuba, Fagot)", transposition: "Bass Clef" },
+  { id: "C_BASS", label: "Clave de Fa (Trombón, Tuba, Fagot)", transposition: "Bass Clef" },
 ]
 
 const partOptions = [
-  { id: "Melodía", label: "Melodía Principal" },
-  { id: "Armonía", label: "Armonía/Contrapunto" },
-  { id: "Bajo", label: "Línea de Bajo" },
+  { id: "MELODIA_PRINCIPAL", label: "Melodía Principal" },
+  { id: "ARMONIA", label: "Armonía/Contrapunto" },
+  { id: "BAJO", label: "Línea de Bajo" },
 ]
 
 export function SongDetails({ song, isDarkMode, isPlaying, onTogglePlayPause, onRestart }: SongDetailsProps) {
-  const [selectedInstrument, setSelectedInstrument] = useState("Bb")
-  const [selectedPart, setSelectedPart] = useState("Melodía")
-  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([])
-
-  useEffect(() => {
-    // TODO: Load files from SheetMusic API when available
-    // For now, no additional files are loaded - only the main audio and image from the song object
-    setUploadedFiles([])
-    console.log("[SongDetails] Song loaded from SheetMusic API:", song.title)
-  }, [song.id])
-
+  const [selectedInstrument, setSelectedInstrument] = useState<keyof SheetMusicFiles>("Bb")
+  const [selectedPart, setSelectedPart] = useState<"MELODIA_PRINCIPAL" | "ARMONIA" | "BAJO">("MELODIA_PRINCIPAL")
 
   const handleDownload = () => {
     const instrument = instrumentOptions.find((i) => i.id === selectedInstrument)
     const part = partOptions.find((p) => p.id === selectedPart)
 
-    const matchingFile = uploadedFiles.find(
-      (f) => f.type === "pdf" && f.tuning === selectedInstrument && f.scoreType === selectedPart,
-    )
+    // Get the file URL from sheet_music_files
+    const fileUrl = song.sheet_music_files?.[selectedInstrument]?.[selectedPart]
 
-    console.log("[v0] Looking for file:", { selectedInstrument, selectedPart, availableFiles: uploadedFiles })
+    console.log("[JDV] Looking for file:", { selectedInstrument, selectedPart, fileUrl })
 
-    if (matchingFile) {
-      console.log("[v0] Downloading file:", matchingFile)
+    if (fileUrl) {
+      console.log("[JDV] Downloading file:", fileUrl)
       const link = document.createElement("a")
-      link.href = matchingFile.url
+      link.href = fileUrl
       link.download = `${song.title}-${instrument?.label}-${part?.label}.pdf`
+      link.target = "_blank"  // Open in new tab as fallback
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)
     } else {
-      const availablePdfs = uploadedFiles.filter((f) => f.type === "pdf")
-      console.log("[v0] Available PDF files:", availablePdfs)
       alert(
-        `No hay archivo disponible para ${instrument?.label} - ${part?.label}.\nArchivos disponibles: ${availablePdfs.length}`,
+        `No hay archivo disponible para ${instrument?.label} - ${part?.label}.`
       )
     }
   }
 
-  const isDownloadAvailable = (instrument: string, part: string) => {
-    return uploadedFiles.some((f) => f.type === "pdf" && f.tuning === instrument && f.scoreType === part)
+  const isDownloadAvailable = (instrument: keyof SheetMusicFiles, part: "MELODIA_PRINCIPAL" | "ARMONIA" | "BAJO") => {
+    return !!(song.sheet_music_files?.[instrument]?.[part])
   }
 
   const getAvailableInstruments = () => {
     return instrumentOptions.map(instrument => ({
       ...instrument,
-      isAvailable: isDownloadAvailable(instrument.id, selectedPart)
+      isAvailable: isDownloadAvailable(instrument.id as keyof SheetMusicFiles, selectedPart)
     }))
+  }
+
+  const getAvailableFilesCount = () => {
+    if (!song.sheet_music_files) return 0
+
+    let count = 0
+    Object.keys(song.sheet_music_files).forEach((tuning) => {
+      const tuningFiles = song.sheet_music_files![tuning as keyof SheetMusicFiles]
+      Object.values(tuningFiles).forEach((fileUrl) => {
+        if (fileUrl) count++
+      })
+    })
+    return count
   }
 
   const hasAudio = !!song.audioUrl
@@ -198,25 +191,24 @@ export function SongDetails({ song, isDarkMode, isPlaying, onTogglePlayPause, on
             Descargar Partituras
           </h3>
 
-          {uploadedFiles.length > 0 ? (
-            <div className="mb-4 p-3 rounded-lg bg-green-50 border border-green-200">
-              <p className="text-sm text-green-800 font-medium">
-                Archivos disponibles: {uploadedFiles.filter((f) => f.type === "pdf").length} partituras
+          {getAvailableFilesCount() > 0 ? (
+            <div className={`mb-4 p-3 rounded-lg border ${
+              isDarkMode
+                ? "bg-green-900/30 border-green-800 text-green-300"
+                : "bg-green-50 border-green-200 text-green-800"
+            }`}>
+              <p className="text-sm font-medium">
+                ✓ Archivos disponibles: {getAvailableFilesCount()} partituras
               </p>
-              <div className="mt-2 flex flex-wrap gap-1">
-                {uploadedFiles
-                  .filter((f) => f.type === "pdf")
-                  .map((file, index) => (
-                    <span key={index} className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                      {file.tuning} - {file.scoreType}
-                    </span>
-                  ))}
-              </div>
             </div>
           ) : (
-            <div className="mb-4 p-3 rounded-lg bg-yellow-50 border border-yellow-200">
-              <p className="text-sm text-yellow-800 font-medium">
-                No hay archivos subidos para este tema.
+            <div className={`mb-4 p-3 rounded-lg border ${
+              isDarkMode
+                ? "bg-yellow-900/30 border-yellow-800 text-yellow-300"
+                : "bg-yellow-50 border-yellow-200 text-yellow-800"
+            }`}>
+              <p className="text-sm font-medium">
+                ⚠ No hay archivos subidos para este tema. Contacta al admin para solicitar partituras.
               </p>
             </div>
           )}
@@ -233,7 +225,7 @@ export function SongDetails({ song, isDarkMode, isPlaying, onTogglePlayPause, on
                 return (
                   <button
                     key={instrument.id}
-                    onClick={() => isAvailable && setSelectedInstrument(instrument.id)}
+                    onClick={() => isAvailable && setSelectedInstrument(instrument.id as keyof SheetMusicFiles)}
                     disabled={!isAvailable}
                     className={cn(
                       "px-3 py-2 rounded-lg border transition-all duration-200 text-sm",
@@ -248,9 +240,9 @@ export function SongDetails({ song, isDarkMode, isPlaying, onTogglePlayPause, on
                             : "border-gray-200 text-gray-400 bg-gray-50 cursor-not-allowed opacity-50",
                     )}
                   >
-                    <div className="font-medium">{instrument.id}</div>
+                    <div className="font-medium">{instrument.label.split(" ")[0]}</div>
                     {isAvailable && (
-                      <div className="text-xs opacity-75 mt-0.5">{instrument.transposition}</div>
+                      <div className="text-xs opacity-75 mt-0.5">{instrument.label.split(" (")[1]?.replace(")", "")}</div>
                     )}
                   </button>
                 )
@@ -264,7 +256,7 @@ export function SongDetails({ song, isDarkMode, isPlaying, onTogglePlayPause, on
               {partOptions.map((part) => (
                 <button
                   key={part.id}
-                  onClick={() => setSelectedPart(part.id)}
+                  onClick={() => setSelectedPart(part.id as "MELODIA_PRINCIPAL" | "ARMONIA" | "BAJO")}
                   className={cn(
                     "px-3 py-2 rounded-lg border transition-all duration-200 text-sm",
                     selectedPart === part.id

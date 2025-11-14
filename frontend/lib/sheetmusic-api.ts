@@ -1,16 +1,48 @@
 // SheetMusic API Client for jamdevientos.com integration
 
+export interface SheetMusicFiles {
+  Bb: {
+    MELODIA_PRINCIPAL: string | null
+    ARMONIA: string | null
+    BAJO: string | null
+  }
+  Eb: {
+    MELODIA_PRINCIPAL: string | null
+    ARMONIA: string | null
+    BAJO: string | null
+  }
+  C: {
+    MELODIA_PRINCIPAL: string | null
+    ARMONIA: string | null
+    BAJO: string | null
+  }
+  F: {
+    MELODIA_PRINCIPAL: string | null
+    ARMONIA: string | null
+    BAJO: string | null
+  }
+  C_BASS: {
+    MELODIA_PRINCIPAL: string | null
+    ARMONIA: string | null
+    BAJO: string | null
+  }
+}
+
 export interface SheetMusicVersion {
   id: number
   title: string
   theme_title: string
   artist: string
   tonalidad: string
-  order: number
+  order?: number
   sheet_music_count: number
   audio?: string
+  audio_file?: string  // Version-specific audio
   image?: string
+  theme_image?: string  // Theme-specific image
+  theme_audio?: string  // Theme-specific audio
   is_visible?: boolean
+  sheet_music_files?: SheetMusicFiles  // Organized PDFs by tuning and part
 }
 
 export interface SheetMusicRepertoire {
@@ -78,7 +110,7 @@ export class SheetMusicAPI {
    * Get events for carousel display (next 10 events)
    */
   async getEventsCarousel(): Promise<CarouselResponse> {
-    const url = `${this.baseURL}/api/v1/events/jamdevientos/carousel/`
+    const url = `${this.baseURL}/api/v1/jdv/events/carousel/`
     return this.fetchWithErrorHandling(url)
   }
 
@@ -86,7 +118,7 @@ export class SheetMusicAPI {
    * Get upcoming events with full repertoires
    */
   async getUpcomingEvents(): Promise<CarouselResponse> {
-    const url = `${this.baseURL}/api/v1/events/jamdevientos/upcoming/`
+    const url = `${this.baseURL}/api/v1/jdv/events/upcoming/`
     return this.fetchWithErrorHandling(url)
   }
 
@@ -94,7 +126,7 @@ export class SheetMusicAPI {
    * Get complete repertoire for specific event
    */
   async getEventRepertoire(eventId: number): Promise<SheetMusicEvent> {
-    const url = `${this.baseURL}/api/v1/events/jamdevientos/${eventId}/repertoire/`
+    const url = `${this.baseURL}/api/v1/jdv/events/${eventId}/repertoire/`
     return this.fetchWithErrorHandling(url)
   }
 
@@ -102,12 +134,15 @@ export class SheetMusicAPI {
    * List all public events
    */
   async getEvents(): Promise<SheetMusicEvent[]> {
-    const url = `${this.baseURL}/api/v1/events/jamdevientos/`
+    const url = `${this.baseURL}/api/v1/jdv/events/`
     const response = await this.fetchWithErrorHandling(url)
 
     // Handle both array response and object with events property
     if (Array.isArray(response)) {
       return response
+    } else if (response && Array.isArray(response.results)) {
+      // DRF pagination format
+      return response.results
     } else if (response && Array.isArray(response.events)) {
       return response.events
     } else {
@@ -120,7 +155,7 @@ export class SheetMusicAPI {
    * Get event detail with repertoire
    */
   async getEventDetail(eventId: number): Promise<SheetMusicEvent> {
-    const url = `${this.baseURL}/api/v1/events/jamdevientos/${eventId}/`
+    const url = `${this.baseURL}/api/v1/jdv/events/${eventId}/`
     return this.fetchWithErrorHandling(url)
   }
 
@@ -128,8 +163,40 @@ export class SheetMusicAPI {
    * Get event by slug
    */
   async getEventBySlug(slug: string): Promise<SheetMusicEvent> {
-    const url = `${this.baseURL}/api/v1/events/jamdevientos/by-slug/?slug=${encodeURIComponent(slug)}`
+    const url = `${this.baseURL}/api/v1/jdv/events/by-slug/?slug=${encodeURIComponent(slug)}`
     return this.fetchWithErrorHandling(url)
+  }
+
+  /**
+   * Download sheet music PDF for specific instrument and part type
+   */
+  async getSheetMusicPDF(versionId: number, tuning: string, partType: string): Promise<string | null> {
+    try {
+      // First get the version detail to access sheet_music_files
+      const url = `${this.baseURL}/api/v1/jdv/events/`
+      const events = await this.getEvents()
+
+      // Find the version in any event's repertoire
+      for (const event of events) {
+        if (event.repertoire && event.repertoire.versions) {
+          for (const rv of event.repertoire.versions) {
+            if (rv.version && rv.version.id === versionId) {
+              // Found the version, access sheet_music_files
+              const sheetMusicFiles = rv.version.sheet_music_files
+              if (sheetMusicFiles && sheetMusicFiles[tuning as keyof SheetMusicFiles]) {
+                const file = sheetMusicFiles[tuning as keyof SheetMusicFiles][partType as 'MELODIA_PRINCIPAL' | 'ARMONIA' | 'BAJO']
+                return file
+              }
+            }
+          }
+        }
+      }
+
+      return null
+    } catch (error) {
+      console.error('Error getting sheet music PDF:', error)
+      return null
+    }
   }
 
   /**

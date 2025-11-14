@@ -20,7 +20,7 @@ interface Theme {
   audioUrl?: string
   is_visible?: boolean
 }
-import { sheetMusicAPI, type SheetMusicEvent, type SheetMusicVersion } from "@/lib/sheetmusic-api"
+import { sheetMusicAPI, type SheetMusicEvent, type SheetMusicVersion, type SheetMusicFiles } from "@/lib/sheetmusic-api"
 import { MapPinIcon, CalendarIcon, MessageCircleIcon, MoonIcon, SunIcon, SettingsIcon } from "@/components/icons"
 
 interface Song {
@@ -33,6 +33,7 @@ interface Song {
   structure: string
   description: string
   audioUrl?: string
+  sheet_music_files?: SheetMusicFiles
 }
 
 const convertThemeToSong = (theme: Theme): Song => ({
@@ -51,12 +52,13 @@ const convertVersionToSong = (version: SheetMusicVersion): Song => ({
   id: version.id,
   title: version.theme_title,
   artist: version.artist,
-  image: version.image || "/placeholder.svg",
+  image: version.theme_image || version.image || "/placeholder.svg",
   key: version.tonalidad,
   tempo: "120 BPM", // Default since not in Version model
   structure: "Standard", // Default since not in Version model
   description: `Versión ${version.title || 'estándar'}`,
-  audioUrl: version.audio,
+  audioUrl: version.audio_file || version.theme_audio || version.audio,
+  sheet_music_files: version.sheet_music_files,  // Include sheet music files from API
 })
 
 export default function JamDeVientosPage() {
